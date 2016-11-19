@@ -1,0 +1,1090 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<title>JabRef references</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<script type="text/javascript">
+<!--
+// QuickSearch script for JabRef HTML export 
+// Version: 3.0
+//
+// Copyright (c) 2006-2011, Mark Schenk
+//
+// This software is distributed under a Creative Commons Attribution 3.0 License
+// http://creativecommons.org/licenses/by/3.0/
+//
+// Features:
+// - intuitive find-as-you-type searching
+//    ~ case insensitive
+//    ~ ignore diacritics (optional)
+//
+// - search with/without Regular Expressions
+// - match BibTeX key
+//
+
+// Search settings
+var searchAbstract = true;	// search in abstract
+var searchReview = true;	// search in review
+
+var noSquiggles = true; 	// ignore diacritics when searching
+var searchRegExp = false; 	// enable RegExp searches
+
+
+if (window.addEventListener) {
+	window.addEventListener("load",initSearch,false); }
+else if (window.attachEvent) {
+	window.attachEvent("onload", initSearch); }
+
+function initSearch() {
+	// check for quick search table and searchfield
+	if (!document.getElementById('qs_table')||!document.getElementById('quicksearch')) { return; }
+
+	// load all the rows and sort into arrays
+	loadTableData();
+	
+	//find the query field
+	qsfield = document.getElementById('qs_field');
+
+	// previous search term; used for speed optimisation
+	prevSearch = '';
+
+	//find statistics location
+	stats = document.getElementById('stat');
+	setStatistics(-1);
+	
+	// set up preferences
+	initPreferences();
+
+	// shows the searchfield
+	document.getElementById('quicksearch').style.display = 'block';
+	document.getElementById('qs_field').onkeyup = quickSearch;
+}
+
+function loadTableData() {
+	// find table and appropriate rows
+	searchTable = document.getElementById('qs_table');
+	var allRows = searchTable.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+
+	// split all rows into entryRows and infoRows (e.g. abstract, review, bibtex)
+	entryRows = new Array(); infoRows = new Array(); absRows = new Array(); revRows = new Array();
+
+	// get data from each row
+	entryRowsData = new Array(); absRowsData = new Array(); revRowsData = new Array(); 
+	
+	BibTeXKeys = new Array();
+	
+	for (var i=0, k=0, j=0; i<allRows.length;i++) {
+		if (allRows[i].className.match(/entry/)) {
+			entryRows[j] = allRows[i];
+			entryRowsData[j] = stripDiacritics(getTextContent(allRows[i]));
+			allRows[i].id ? BibTeXKeys[j] = allRows[i].id : allRows[i].id = 'autokey_'+j;
+			j ++;
+		} else {
+			infoRows[k++] = allRows[i];
+			// check for abstract/review
+			if (allRows[i].className.match(/abstract/)) {
+				absRows.push(allRows[i]);
+				absRowsData[j-1] = stripDiacritics(getTextContent(allRows[i]));
+			} else if (allRows[i].className.match(/review/)) {
+				revRows.push(allRows[i]);
+				revRowsData[j-1] = stripDiacritics(getTextContent(allRows[i]));
+			}
+		}
+	}
+	//number of entries and rows
+	numEntries = entryRows.length;
+	numInfo = infoRows.length;
+	numAbs = absRows.length;
+	numRev = revRows.length;
+}
+
+function quickSearch(){
+	
+	tInput = qsfield;
+
+	if (tInput.value.length == 0) {
+		showAll();
+		setStatistics(-1);
+		qsfield.className = '';
+		return;
+	} else {
+		t = stripDiacritics(tInput.value);
+
+		if(!searchRegExp) { t = escapeRegExp(t); }
+			
+		// only search for valid RegExp
+		try {
+			textRegExp = new RegExp(t,"i");
+			closeAllInfo();
+			qsfield.className = '';
+		}
+			catch(err) {
+			prevSearch = tInput.value;
+			qsfield.className = 'invalidsearch';
+			return;
+		}
+	}
+	
+	// count number of hits
+	var hits = 0;
+
+	// start looping through all entry rows
+	for (var i = 0; cRow = entryRows[i]; i++){
+
+		// only show search the cells if it isn't already hidden OR if the search term is getting shorter, then search all
+		if(cRow.className.indexOf('noshow')==-1 || tInput.value.length <= prevSearch.length){
+			var found = false; 
+
+			if (entryRowsData[i].search(textRegExp) != -1 || BibTeXKeys[i].search(textRegExp) != -1){ 
+				found = true;
+			} else {
+				if(searchAbstract && absRowsData[i]!=undefined) {
+					if (absRowsData[i].search(textRegExp) != -1){ found=true; } 
+				}
+				if(searchReview && revRowsData[i]!=undefined) {
+					if (revRowsData[i].search(textRegExp) != -1){ found=true; } 
+				}
+			}
+			
+			if (found){
+				cRow.className = 'entry show';
+				hits++;
+			} else {
+				cRow.className = 'entry noshow';
+			}
+		}
+	}
+
+	// update statistics
+	setStatistics(hits)
+	
+	// set previous search value
+	prevSearch = tInput.value;
+}
+
+
+// Strip Diacritics from text
+// http://stackoverflow.com/questions/990904/javascript-remove-accents-in-strings
+
+// String containing replacement characters for stripping accents 
+var stripstring = 
+    'AAAAAAACEEEEIIII'+
+    'DNOOOOO.OUUUUY..'+
+    'aaaaaaaceeeeiiii'+
+    'dnooooo.ouuuuy.y'+
+    'AaAaAaCcCcCcCcDd'+
+    'DdEeEeEeEeEeGgGg'+
+    'GgGgHhHhIiIiIiIi'+
+    'IiIiJjKkkLlLlLlL'+
+    'lJlNnNnNnnNnOoOo'+
+    'OoOoRrRrRrSsSsSs'+
+    'SsTtTtTtUuUuUuUu'+
+    'UuUuWwYyYZzZzZz.';
+
+function stripDiacritics(str){
+
+    if(noSquiggles==false){
+        return str;
+    }
+
+    var answer='';
+    for(var i=0;i<str.length;i++){
+        var ch=str[i];
+        var chindex=ch.charCodeAt(0)-192;   // Index of character code in the strip string
+        if(chindex>=0 && chindex<stripstring.length){
+            // Character is within our table, so we can strip the accent...
+            var outch=stripstring.charAt(chindex);
+            // ...unless it was shown as a '.'
+            if(outch!='.')ch=outch;
+        }
+        answer+=ch;
+    }
+    return answer;
+}
+
+// http://stackoverflow.com/questions/3446170/escape-string-for-use-in-javascript-regex
+// NOTE: must escape every \ in the export code because of the JabRef Export...
+function escapeRegExp(str) {
+  return str.replace(/[-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
+}
+
+function toggleInfo(articleid,info) {
+
+	var entry = document.getElementById(articleid);
+	var abs = document.getElementById('abs_'+articleid);
+	var rev = document.getElementById('rev_'+articleid);
+	var bib = document.getElementById('bib_'+articleid);
+	
+	if (abs && info == 'abstract') {
+		abs.className.indexOf('noshow') == -1?abs.className = 'abstract noshow':abs.className = 'abstract show';
+	} else if (rev && info == 'review') {
+		rev.className.indexOf('noshow') == -1?rev.className = 'review noshow':rev.className = 'review show';
+	} else if (bib && info == 'bibtex') {
+		bib.className.indexOf('noshow') == -1?bib.className = 'bibtex noshow':bib.className = 'bibtex show';
+	} else { 
+		return;
+	}
+
+	// check if one or the other is available
+	var revshow; var absshow; var bibshow;
+	(abs && abs.className.indexOf('noshow') == -1)? absshow = true: absshow = false;
+	(rev && rev.className.indexOf('noshow') == -1)? revshow = true: revshow = false;	
+	(bib && bib.className.indexOf('noshow') == -1)? bibshow = true: bibshow = false;
+	
+	// highlight original entry
+	if(entry) {
+		if (revshow || absshow || bibshow) {
+		entry.className = 'entry highlight show';
+		} else {
+		entry.className = 'entry show';
+		}
+	}
+	
+	// When there's a combination of abstract/review/bibtex showing, need to add class for correct styling
+	if(absshow) {
+		(revshow||bibshow)?abs.className = 'abstract nextshow':abs.className = 'abstract';
+	} 
+	if (revshow) {
+		bibshow?rev.className = 'review nextshow': rev.className = 'review';
+	}	
+	
+}
+
+function setStatistics (hits) {
+	if(hits < 0) { hits=numEntries; }
+	if(stats) { stats.firstChild.data = hits + '/' + numEntries}
+}
+
+function getTextContent(node) {
+	// Function written by Arve Bersvendsen
+	// http://www.virtuelvis.com
+	
+	if (node.nodeType == 3) {
+	return node.nodeValue;
+	} // text node
+	if (node.nodeType == 1 && node.className != "infolinks") { // element node
+	var text = [];
+	for (var chld = node.firstChild;chld;chld=chld.nextSibling) {
+		text.push(getTextContent(chld));
+	}
+	return text.join("");
+	} return ""; // some other node, won't contain text nodes.
+}
+
+function showAll(){
+	closeAllInfo();
+	for (var i = 0; i < numEntries; i++){ entryRows[i].className = 'entry show'; }
+}
+
+function closeAllInfo(){
+	for (var i=0; i < numInfo; i++){
+		if (infoRows[i].className.indexOf('noshow') ==-1) {
+			infoRows[i].className = infoRows[i].className + ' noshow';
+		}
+	}
+}
+
+function clearQS() {
+	qsfield.value = '';
+	showAll();
+}
+
+function redoQS(){
+	showAll();
+	quickSearch(qsfield);
+}
+
+function updateSetting(obj){
+	var option = obj.id;
+	var checked = obj.value;
+
+	switch(option)
+	 {
+	 case "opt_searchAbs":
+	   searchAbstract=!searchAbstract;
+	   redoQS();
+	   break;
+	 case "opt_searchRev":
+	   searchReview=!searchReview;
+	   redoQS();
+	   break;
+	 case "opt_useRegExp":
+	   searchRegExp=!searchRegExp;
+	   redoQS();
+	   break;
+	 case "opt_noAccents":
+	   noSquiggles=!noSquiggles;
+	   loadTableData();
+	   redoQS();
+	   break;
+	 }
+}
+
+function initPreferences(){
+	if(searchAbstract){document.getElementById("opt_searchAbs").checked = true;}
+	if(searchReview){document.getElementById("opt_searchRev").checked = true;}
+	if(noSquiggles){document.getElementById("opt_noAccents").checked = true;}
+	if(searchRegExp){document.getElementById("opt_useRegExp").checked = true;}
+	
+	if(numAbs==0) {document.getElementById("opt_searchAbs").parentNode.style.display = 'none';}
+	if(numRev==0) {document.getElementById("opt_searchRev").parentNode.style.display = 'none';}
+}
+
+function toggleSettings(){
+	var togglebutton = document.getElementById('showsettings');
+	var settings = document.getElementById('settings');
+	
+	if(settings.className == "hidden"){
+		settings.className = "show";
+		togglebutton.innerText = "close settings";
+		togglebutton.textContent = "close settings";
+	}else{
+		settings.className = "hidden";
+		togglebutton.innerText = "settings...";		
+		togglebutton.textContent = "settings...";
+	}
+}
+
+-->
+</script>
+<style type="text/css">
+body { background-color: white; font-family: Arial, sans-serif; font-size: 13px; line-height: 1.2; padding: 1em; color: #2E2E2E; margin: auto 2em; }
+
+form#quicksearch { width: auto; border-style: solid; border-color: gray; border-width: 1px 0px; padding: 0.7em 0.5em; display:none; position:relative; }
+span#searchstat {padding-left: 1em;}
+
+div#settings { margin-top:0.7em; /* border-bottom: 1px transparent solid; background-color: #efefef; border: 1px grey solid; */ }
+div#settings ul {margin: 0; padding: 0; }
+div#settings li {margin: 0; padding: 0 1em 0 0; display: inline; list-style: none; }
+div#settings li + li { border-left: 2px #efefef solid; padding-left: 0.5em;}
+div#settings input { margin-bottom: 0px;}
+
+div#settings.hidden {display:none;}
+
+#showsettings { border: 1px grey solid; padding: 0 0.5em; float:right; line-height: 1.6em; text-align: right; }
+#showsettings:hover { cursor: pointer; }
+
+.invalidsearch { background-color: red; }
+input[type="button"] { background-color: #efefef; border: 1px #2E2E2E solid;}
+
+table { width: 100%; empty-cells: show; border-spacing: 0em 0.2em; margin: 1em 0em; border-style: none; }
+th, td { border: 1px gray solid; border-width: 1px 1px; padding: 0.5em; vertical-align: top; text-align: left; }
+th { background-color: #efefef; }
+td + td, th + th { border-left: none; }
+
+td a { color: navy; text-decoration: none; }
+td a:hover  { text-decoration: underline; }
+
+tr.noshow { display: none;}
+tr.highlight td { background-color: #EFEFEF; border-top: 2px #2E2E2E solid; font-weight: bold; }
+tr.abstract td, tr.review td, tr.bibtex td { background-color: #EFEFEF; text-align: justify; border-bottom: 2px #2E2E2E solid; }
+tr.nextshow td { border-bottom: 1px gray solid; }
+
+tr.bibtex pre { width: 100%; overflow: auto; white-space: pre-wrap;}
+p.infolinks { margin: 0.3em 0em 0em 0em; padding: 0px; }
+
+@media print {
+	p.infolinks, #qs_settings, #quicksearch, t.bibtex { display: none !important; }
+	tr { page-break-inside: avoid; }
+}
+</style>
+</head>
+<body>
+
+<form action="" id="quicksearch">
+<input type="text" id="qs_field" autocomplete="off" placeholder="Type to search..." /> <input type="button" onclick="clearQS()" value="clear" />
+<span id="searchstat">Matching entries: <span id="stat">0</span></span>
+<div id="showsettings" onclick="toggleSettings()">settings...</div>
+<div id="settings" class="hidden">
+<ul>
+<li><input type="checkbox" class="search_setting" id="opt_searchAbs" onchange="updateSetting(this)"><label for="opt_searchAbs"> include abstract</label></li>
+<li><input type="checkbox" class="search_setting" id="opt_searchRev" onchange="updateSetting(this)"><label for="opt_searchRev"> include review</label></li>
+<li><input type="checkbox" class="search_setting" id="opt_useRegExp" onchange="updateSetting(this)"><label for="opt_useRegExp"> use RegExp</label></li>
+<li><input type="checkbox" class="search_setting" id="opt_noAccents" onchange="updateSetting(this)"><label for="opt_noAccents"> ignore accents</label></li>
+</ul>
+</div>
+</form>
+<table id="qs_table" border="1">
+<thead><tr><th width="20%">Author</th><th width="30%">Title</th><th width="5%">Year</th><th width="30%">Journal/Proceedings</th><th width="10%">Reftype</th><th width="5%">DOI/URL</th></tr></thead>
+<tbody><tr id="burden-sicb13" class="entry">
+	<td>Burden, S.A., Revzen, S., Moore, T.Y., Sastry, S.S. and Full, R.J.</td>
+	<td>Using reduced—order models to study dynamic legged locomotion: Parameter identification and model validation <p class="infolinks">[<a href="javascript:toggleInfo('burden-sicb13','bibtex')">BibTeX</a>]</p></td>
+	<td>2013</td>
+	<td>Integr and Comp Biol&nbsp;</td>
+	<td>conference</td>
+	<td>&nbsp;</td>
+</tr>
+<tr id="bib_burden-sicb13" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@conference{burden-sicb13,
+  author = {Burden, S A and Revzen, S and Moore, T Y and Sastry, S S and Full, R J},
+  title = {Using reduced—order models to study dynamic legged locomotion: Parameter identification and model validation},
+  booktitle = {Integr and Comp Biol},
+  year = {2013}
+}
+</pre></td>
+</tr>
+<tr id="burden-2013-fatt" class="entry">
+	<td>Burden, S.A., Revzen, S. and Sastry, S.S.</td>
+	<td>From anchors to templates: Exact and approximate reduction in models of legged locomotion <p class="infolinks">[<a href="javascript:toggleInfo('burden-2013-fatt','bibtex')">BibTeX</a>]</p></td>
+	<td>2013</td>
+	<td>Dynamic Walking&nbsp;</td>
+	<td>conference</td>
+	<td><a href="http://www.cmu.edu/dynamic-walking/files/abstracts/Burden_2013_DW.pdf">URL</a>&nbsp;</td>
+</tr>
+<tr id="bib_burden-2013-fatt" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@conference{burden-2013-fatt,
+  author = {Burden, S A and Revzen, S and Sastry, S S},
+  title = {From anchors to templates: Exact and approximate reduction in models of legged locomotion},
+  booktitle = {Dynamic Walking},
+  year = {2013},
+  url = {http://www.cmu.edu/dynamic-walking/files/abstracts/Burden_2013_DW.pdf}
+}
+</pre></td>
+</tr>
+<tr id="council-2015-sicb" class="entry">
+	<td>Council, G. and Revzen, S.</td>
+	<td>Running with certainty on uncertain terrain requires little to no neural feedback <p class="infolinks">[<a href="javascript:toggleInfo('council-2015-sicb','abstract')">Abstract</a>] [<a href="javascript:toggleInfo('council-2015-sicb','bibtex')">BibTeX</a>]</p></td>
+	<td>2015</td>
+	<td>Integr and Comp Biol&nbsp;</td>
+	<td>conference</td>
+	<td><a href="http://www.sicb.org/meetings/2015/schedule/abstractdetails.php?id=1409">URL</a>&nbsp;</td>
+</tr>
+<tr id="abs_council-2015-sicb" class="abstract noshow">
+	<td colspan="6"><b>Abstract</b>: Rapid legged locomotion is of critical importance for many animal species. In most natural environments, animals cannot rely on the ground being predictably flat. We present a result from nonlinear control showing that under most circumstances animals should be able to select a feed-forward strategy that would eliminate the uncertainty in movement generated by non-flat terrain. Since this strategy requires no sensory feedback, it may be implemented morphologically in the shape of the body and the mechanical structure of the limbs. We demonstrate such a strategy for the Spring Loaded Inverted Pendulum model of running. We hypothesize that such controllers appear in some rapidly running organisms. In such systems, no investigation of neural feedback could reveal the dominant mechanism of control, and analysis of neuronal responses would at best be misleading.</td>
+</tr>
+<tr id="bib_council-2015-sicb" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@conference{council-2015-sicb,
+  author = {Council, G and Revzen, S},
+  title = {Running with certainty on uncertain terrain requires little to no neural feedback},
+  booktitle = {Integr and Comp Biol},
+  year = {2015},
+  url = {http://www.sicb.org/meetings/2015/schedule/abstractdetails.php?id=1409}
+}
+</pre></td>
+</tr>
+<tr id="daley-2012-SEB" class="entry">
+	<td>Daley, M., Revzen, S. and Wilshin, S.D.</td>
+	<td>Towards a unified notion of gaits <p class="infolinks">[<a href="javascript:toggleInfo('daley-2012-SEB','abstract')">Abstract</a>] [<a href="javascript:toggleInfo('daley-2012-SEB','bibtex')">BibTeX</a>]</p></td>
+	<td>2012</td>
+	<td>Animal Abstracts&nbsp;</td>
+	<td>conference</td>
+	<td>&nbsp;</td>
+</tr>
+<tr id="abs_daley-2012-SEB" class="abstract noshow">
+	<td colspan="6"><b>Abstract</b>: While a variety of definitions of "gait" have proved useful in experimental biology, there exist many superficially disparate definitions of "gait", both in the literature and among practicing biologists. At times these definitions are contradictory, for example a definition of gait which required a discrete jump in some quantity (as occurs for the walk-trot transition in dogs) could imply that walking and running are indistinct in some birds; yet, these are intuitively different modes of locomotion. Here we propose a unified conception of gait and show how the hierarchical nature of our definition solves this difficulty and highlights important questions in control and in the determinants of locomotion. We propose to define "gait" as "a parametrically related family of non-dimensional kinematic observations of a locomotor behavior which can persist indefinitely". We arrived at this definition by identifying the commonalities between existing definitions, highlighting the utility of distinctions such as the scale free nature of gait metrics, the cyclic nature of most familiar "gaits", and the natural hierarchies of gaits. We show how existing definitions are embedded in ours. Additionally, we highlight the practical utility of our definition in terms of both pedagogy and research. Our definition conceptually clarifies theories of gait by highlighting the relations between gait hierarchies and locomotion model hierarchies. Our approach sharpens the ability to formulate biomechanical research hypotheses about all forms of locomotion in both species-specific and comparative studies. The resulting language can also be used to describe gaits in non-cyclic locomotion.</td>
+</tr>
+<tr id="bib_daley-2012-SEB" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@conference{daley-2012-SEB,
+  author = {Daley, M and Revzen, S and Wilshin, S D},
+  title = {Towards a unified notion of gaits},
+  booktitle = {Animal Abstracts},
+  year = {2012}
+}
+</pre></td>
+</tr>
+<tr id="frimerman-2008" class="entry">
+	<td>Frimerman, A., S, R. and B, S.</td>
+	<td>Spatial Relation of QRS-T Vectorcardiogram is a Good Predictor of Coronary Disease in Patients with Normal Rest 12-Leads ECG (poster) <p class="infolinks">[<a href="javascript:toggleInfo('frimerman-2008','bibtex')">BibTeX</a>]</p></td>
+	<td>2008</td>
+	<td>55th Annual Conference of the Israel Heart Society and the Israel Society of Cardiothoracic Surgery&nbsp;</td>
+	<td>conference</td>
+	<td>&nbsp;</td>
+</tr>
+<tr id="bib_frimerman-2008" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@conference{frimerman-2008,
+  author = {Frimerman, A and Revzen S and Shani B},
+  title = {Spatial Relation of QRS-T Vectorcardiogram is a Good Predictor of Coronary Disease in Patients with Normal Rest 12-Leads ECG (poster)},
+  booktitle = {55th Annual Conference of the Israel Heart Society and the Israel Society of Cardiothoracic Surgery},
+  year = {2008}
+}
+</pre></td>
+</tr>
+<tr id="kvalheim-2015-sicb" class="entry">
+	<td>Kvalheim, M. and Revzen, S.</td>
+	<td>Better models of rhythmic systems: predicting locomotion from phase alone <p class="infolinks">[<a href="javascript:toggleInfo('kvalheim-2015-sicb','abstract')">Abstract</a>] [<a href="javascript:toggleInfo('kvalheim-2015-sicb','bibtex')">BibTeX</a>]</p></td>
+	<td>2015</td>
+	<td>Integr and Comp Biol&nbsp;</td>
+	<td>conference</td>
+	<td><a href="http://www.sicb.org/meetings/2015/schedule/abstractdetails.php?id=1426">URL</a>&nbsp;</td>
+</tr>
+<tr id="abs_kvalheim-2015-sicb" class="abstract noshow">
+	<td colspan="6"><b>Abstract</b>: Many animal locomotion behaviors consist of repeating stereotyped body motions in a rhythmic fashion. When these rhythmic motions are recovered after the body encounters a disturbance, one may consider the characteristic motion to be a limit cycle of a stable nonlinear oscillator. We show, under the assumption that our data set consists of a collection of N trials each containing M cycles, that partitioning the data into cycles based on a distinguished event such as heel-strike (often used for human motion studies) and averaging the cycles produces statistically inferior model of typical motions to averaging based on an estimate of dynamical phase. The improved accuracy of the phase based model can enable effects to be detected that would otherwise require many more trials. Examples from several locomotion experimental datasets will be provided</td>
+</tr>
+<tr id="bib_kvalheim-2015-sicb" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@conference{kvalheim-2015-sicb,
+  author = {Kvalheim, M and Revzen, S},
+  title = {Better models of rhythmic systems: predicting locomotion from phase alone},
+  booktitle = {Integr and Comp Biol},
+  year = {2015},
+  url = {http://www.sicb.org/meetings/2015/schedule/abstractdetails.php?id=1426}
+}
+</pre></td>
+</tr>
+<tr id="maus-2011-dw" class="entry">
+	<td>Maus, M. and Revzen, S.</td>
+	<td>Linear structure in human treadmill running? <p class="infolinks">[<a href="javascript:toggleInfo('maus-2011-dw','bibtex')">BibTeX</a>]</p></td>
+	<td>2011</td>
+	<td>Dynamic Walking&nbsp;</td>
+	<td>conference</td>
+	<td>&nbsp;</td>
+</tr>
+<tr id="bib_maus-2011-dw" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@conference{maus-2011-dw,
+  author = {Maus, M and Revzen, S},
+  title = {Linear structure in human treadmill running?},
+  booktitle = {Dynamic Walking},
+  year = {2011}
+}
+</pre></td>
+</tr>
+<tr id="maus-2012-DW" class="entry">
+	<td>Maus, M., Revzen, S. and Guckenheimer, J.M.</td>
+	<td>Drift and deadbeat control in the Floquet structure of human running <p class="infolinks">[<a href="javascript:toggleInfo('maus-2012-DW','bibtex')">BibTeX</a>]</p></td>
+	<td>2012</td>
+	<td>Dynamic Walking&nbsp;</td>
+	<td>conference</td>
+	<td><a href="http://www.ihmc.us/dwc2012files/Revzen.pdf">URL</a>&nbsp;</td>
+</tr>
+<tr id="bib_maus-2012-DW" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@conference{maus-2012-DW,
+  author = {Maus, M and Revzen, S and Guckenheimer, J M},
+  title = {Drift and deadbeat control in the Floquet structure of human running},
+  booktitle = {Dynamic Walking},
+  year = {2012},
+  url = {http://www.ihmc.us/dwc2012files/Revzen.pdf}
+}
+</pre></td>
+</tr>
+<tr id="moore-2012-SICB" class="entry">
+	<td>Moore, T.Y., Revzen, S., Burden, S. and Full, R.J.</td>
+	<td>Adding Inertia and Mass to Test Stability Predictions in Rapid Running Insects (abstract only) <p class="infolinks">[<a href="javascript:toggleInfo('moore-2012-SICB','abstract')">Abstract</a>] [<a href="javascript:toggleInfo('moore-2012-SICB','bibtex')">BibTeX</a>]</p></td>
+	<td>2010</td>
+	<td>Yearly Meeting of the Society for Integrative and Comparative Biology&nbsp;</td>
+	<td>conference</td>
+	<td>&nbsp;</td>
+</tr>
+<tr id="abs_moore-2012-SICB" class="abstract noshow">
+	<td colspan="6"><b>Abstract</b>: A spring-mass model for the horizontal plane dynamics of sprawled running animals (Lateral Leg Spring Model) predicts that added inertia reduces stability and increases the time required to recover from a perturbation. To empirically test this model, we perturbed cockroaches while running across a platform inserted into a track. Cockroaches (Blaberus discoidalis; N=9, 2.17 g mass, 2.18 g cm^2 moment of inertia) ran along the surface of the platform at 31+/-6 cm/sec with a stride frequency of 12.5+/-1.7 Hz. We accelerated the platform (10 cm x 25 cm) laterally at 0.6+/-0.1 g in a 0.1 sec interval providing a 50+/-3 cm/sec velocity change from the impulse. We affixed one of three backpacks on the cockroach to change its inertia distribution and mass. We used a computer vision-based tracking of body roll, pitch, yaw, leg position, and velocity on the translating platform. The control backpack increased the animal's mass by 36% and moment of inertia by 25%; the mass backpack increased mass by 84% and moment of inertia by 26%; the inertia backpack increased mass by 93% and moment of inertia by 865%. Animals equipped with the inertia backpack were not less stable than controls, thereby rejecting the prediction of the horizontal plane Lateral Leg Spring Model. Animals running with the mass backpack were least stable, showing greater body angular changes than other conditions. Larger angular body exercisions of the animals with mass backpacks were delayed by approximately one to two steps. Consistent with this delay was a lag in the change of lateral foot placement relative to the body axis along with its recovery to the pre-perturbation values. Results suggest that a three dimensional model is necessary even in sprawled- posture animals to test hypotheses of self-stabilization, and the role of both mechanical and neural feedback.</td>
+</tr>
+<tr id="bib_moore-2012-SICB" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@conference{moore-2012-SICB,
+  author = {T Y Moore and S Revzen and S Burden and R J Full},
+  title = {Adding Inertia and Mass to Test Stability Predictions in Rapid Running Insects (abstract only)},
+  booktitle = {Yearly Meeting of the Society for Integrative and Comparative Biology},
+  year = {2010}
+}
+</pre></td>
+</tr>
+<tr id="piccoli-2013-seal" class="entry">
+	<td>Piccoli, M., Revzen, S. and Yim, M.</td>
+	<td>SEAL Pack: a versatile, portable, and rapidly deployable SEa, Air, and Land Vehicle <p class="infolinks">[<a href="javascript:toggleInfo('piccoli-2013-seal','abstract')">Abstract</a>] [<a href="javascript:toggleInfo('piccoli-2013-seal','bibtex')">BibTeX</a>]</p></td>
+	<td>2013</td>
+	<td>IEEE Int Symp on Safety Security and Rescue Robotics&nbsp;</td>
+	<td>inproceedings</td>
+	<td><a href="http://www.youtube.com/watch?v=uYhWoePvCGA">URL</a>&nbsp;</td>
+</tr>
+<tr id="abs_piccoli-2013-seal" class="abstract noshow">
+	<td colspan="6"><b>Abstract</b>: There are thirteen categories in the Robotic USAR ontology covering land air and sea vehicles. We present a robot system that is capable of four of those categories including aerial, terrestrial and marine locomotion in a single package that is man-portable and low cost. Each mode of locomotion has useful capabilities that the others do not. The land vehicle can travel over 5km with a 500g load. The boat can travel 0.5 km over water or loiter for 140 minutes. The ﬂyer can traverse any terrain for short periods of time. The system packs into a small 33x20x14 cm package weighing 1 kg. We present design issues and experimental veriﬁcation.</td>
+</tr>
+<tr id="bib_piccoli-2013-seal" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@inproceedings{piccoli-2013-seal,
+  author = {Piccoli, M and Revzen, S and Yim, M},
+  title = {SEAL Pack: a versatile, portable, and rapidly deployable SEa, Air, and Land Vehicle},
+  booktitle = {IEEE Int Symp on Safety Security and Rescue Robotics},
+  year = {2013},
+  note = {http://www.youtube.com/watch?v=uYhWoePvCGAYouTube Video},
+  url = {http://www.youtube.com/watch?v=uYhWoePvCGA}
+}
+</pre></td>
+</tr>
+<tr id="revzen-2015-nfw" class="entry">
+	<td>Revzen, S.</td>
+	<td>Synchronization and Dimensionality Reduction in Networks of Hybrid Phase Oscillators: A Perspective from Legged Locomotion <p class="infolinks">[<a href="javascript:toggleInfo('revzen-2015-nfw','abstract')">Abstract</a>] [<a href="javascript:toggleInfo('revzen-2015-nfw','bibtex')">BibTeX</a>]</p></td>
+	<td>2015</td>
+	<td>Network Frontier Workshop&nbsp;</td>
+	<td>conference</td>
+	<td><a href="http://netfrontier.northwestern.edu/documents/Slides_NFW2015_Revzen.pdf">URL</a>&nbsp;</td>
+</tr>
+<tr id="abs_revzen-2015-nfw" class="abstract noshow">
+	<td colspan="6"><b>Abstract</b>: Phase oscillators are a common reduced model for oscillatory systems. When the equations of motion of a network of phase oscillators are discontinuous (and meet some technical requirements), the resulting model is a hybrid dynamical system. Such models can arise for power grids, for neural nets, and in describing legged locomotion of animals and robots. I present recent results on the dynamics of this class of models, which show surprising advantages for control and stabilization of locomotion thanks to the use of legs. The results apply broadly to networks of hybrid oscillators.</td>
+</tr>
+<tr id="bib_revzen-2015-nfw" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@conference{revzen-2015-nfw,
+  author = {Revzen, S},
+  title = {Synchronization and Dimensionality Reduction in Networks of Hybrid Phase Oscillators: A Perspective from Legged Locomotion},
+  booktitle = {Network Frontier Workshop},
+  year = {2015},
+  url = {http://netfrontier.northwestern.edu/documents/Slides_NFW2015_Revzen.pdf}
+}
+</pre></td>
+</tr>
+<tr id="revzen-2015-tedx" class="entry">
+	<td>Revzen, S.</td>
+	<td>Facing the Unknown, with Robots <p class="infolinks">[<a href="javascript:toggleInfo('revzen-2015-tedx','bibtex')">BibTeX</a>]</p></td>
+	<td>2015</td>
+	<td>TEDx U of M&nbsp;</td>
+	<td>misc</td>
+	<td><a href="https://www.youtube.com/watch?v=W1isc7PRrdY">URL</a>&nbsp;</td>
+</tr>
+<tr id="bib_revzen-2015-tedx" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@misc{revzen-2015-tedx,
+  author = {S Revzen},
+  title = {Facing the Unknown, with Robots},
+  year = {2015},
+  url = {https://www.youtube.com/watch?v=W1isc7PRrdY}
+}
+</pre></td>
+</tr>
+<tr id="RevzenTut1" class="entry">
+	<td>Revzen, S.</td>
+	<td>Templates and Anchors for analysis and synthesis of control <p class="infolinks">[<a href="javascript:toggleInfo('RevzenTut1','bibtex')">BibTeX</a>]</p></td>
+	<td>2008</td>
+	<td>Tutorial 1 presentation, Workshop 4, Mathematical Biosciences Institute&nbsp;</td>
+	<td>misc</td>
+	<td><a href="http://www.mbi.ohio-state.edu/2007/tutorials2007.html">URL</a>&nbsp;</td>
+</tr>
+<tr id="bib_RevzenTut1" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@misc{RevzenTut1,
+  author = {S Revzen},
+  title = {Templates and Anchors for analysis and synthesis of control},
+  year = {2008},
+  url = {http://www.mbi.ohio-state.edu/2007/tutorials2007.html}
+}
+</pre></td>
+</tr>
+<tr id="RevzenTut2" class="entry">
+	<td>Revzen, S.</td>
+	<td>Phase estimation from kinematic data <p class="infolinks">[<a href="javascript:toggleInfo('RevzenTut2','bibtex')">BibTeX</a>]</p></td>
+	<td>2008</td>
+	<td>Tutorial 2 presentation, Workshop 4, Mathematical Biosciences Institute&nbsp;</td>
+	<td>misc</td>
+	<td><a href="http://www.mbi.ohio-state.edu/2007/tutorials2007.html">URL</a>&nbsp;</td>
+</tr>
+<tr id="bib_RevzenTut2" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@misc{RevzenTut2,
+  author = {S Revzen},
+  title = {Phase estimation from kinematic data},
+  year = {2008},
+  url = {http://www.mbi.ohio-state.edu/2007/tutorials2007.html}
+}
+</pre></td>
+</tr>
+<tr id="revzen-2008-SICB" class="entry">
+	<td>Revzen, S., Berns, M.S., Koditschek, D.E. and Full, R.J.</td>
+	<td>Determining Neuromechanical Control Architecture Using Kinematic Phase Response to Perturbations <p class="infolinks">[<a href="javascript:toggleInfo('revzen-2008-SICB','abstract')">Abstract</a>] [<a href="javascript:toggleInfo('revzen-2008-SICB','bibtex')">BibTeX</a>]</p></td>
+	<td>2008</td>
+	<td>Yearly meeting of the Society for Integrative and Comparative Biology&nbsp;</td>
+	<td>conference</td>
+	<td>&nbsp;</td>
+</tr>
+<tr id="abs_revzen-2008-SICB" class="abstract noshow">
+	<td colspan="6"><b>Abstract</b>: We define several neuromechanical control architectures that represent rhythmic motion. The first class is a mass-spring system interacting with the environment whose motions are triggered by specific events. The second class is a mass-spring system driven by the feedforward signal of a CPG-like clock. The third class is a mass-spring system coupled to a clock, but with proprioceptive feedback that tracks a trajectory without altering the dynamics of the clock. The fourth class is similar to the third, but allows feedback to modulate the clock dynamics. We propose that a battery of perturbations to an animal can provide outcomes that allow identification of an architecture. To define these architectures, we selected a vertical hopping model that has received analytical treatment in both robotics and biomechanics, because it is a simple model that captures the essential phase and frequency responses of a neural pattern generator coupled to a mechanical oscillator. We assume that kinematically derived measurements of mechanical phase reflect the coupled internal neural clock phase and can be used to capture aspects of the various motor systems' phase response curves during rhythmic behavior. We subjected the four models to three perturbations that include a bump, a step, and an incline. In the first class phase and frequency change continuously. In the second, frequency is preserved by the clock and phase exhibits several discrete values. Both phase and frequency are preserved by the third class, whereas the fourth is similar in outcomes to the first, but at much longer time scales. Experiments on polypedal running animals will reveal the true empirical power of these architectural hypotheses.</td>
+</tr>
+<tr id="bib_revzen-2008-SICB" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@conference{revzen-2008-SICB,
+  author = {Revzen, S and Berns, M S and Koditschek, D E and Full, R J },
+  title = {Determining Neuromechanical Control Architecture Using Kinematic Phase Response to Perturbations},
+  booktitle = {Yearly meeting of the Society for Integrative and Comparative Biology},
+  year = {2008},
+  note = {(abstract only)}
+}
+</pre></td>
+</tr>
+<tr id="revzen-2011-sotf" class="entry">
+	<td>Revzen, S., Bhoite, M., Macasieb, J.A. and Yim, M.</td>
+	<td>Structure synthesis on-the-fly in a modular robot <p class="infolinks">[<a href="javascript:toggleInfo('revzen-2011-sotf','abstract')">Abstract</a>] [<a href="javascript:toggleInfo('revzen-2011-sotf','bibtex')">BibTeX</a>]</p></td>
+	<td>2011</td>
+	<td>IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS), pp. 4797 - 4802&nbsp;</td>
+	<td>inproceedings</td>
+	<td><a href="http://dx.doi.org/10.1109/IROS.2011.6094575">DOI</a> &nbsp;</td>
+</tr>
+<tr id="abs_revzen-2011-sotf" class="abstract noshow">
+	<td colspan="6"><b>Abstract</b>: We describe a modular robot system that can generate foam to make structural elements. The modular mobile system uses CKBot modules and carries extra modules along with a foam generation device. In this paper, we demonstrate the system synthesizing new robot morphologies - such as snake-like or legged robots or use the conforming foam-based structures to encapsulate objects or modify the environment and discuss the issues in building and using this technique.</td>
+</tr>
+<tr id="bib_revzen-2011-sotf" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@inproceedings{revzen-2011-sotf,
+  author = {Revzen, S and Bhoite, M and Macasieb, J A and Yim, M},
+  title = {Structure synthesis on-the-fly in a modular robot},
+  booktitle = {IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)},
+  year = {2011},
+  pages = {4797 -- 4802},
+  doi = {http://dx.doi.org/10.1109/IROS.2011.6094575}
+}
+</pre></td>
+</tr>
+<tr id="revzen-2007-SICB" class="entry">
+	<td>Revzen, S., Bishop-Moser, J., Spence, A.J. and Full, R.J.</td>
+	<td>Testing Control Models In Rapid Running Insects Using Lateral Ground Translation (abstract only) <p class="infolinks">[<a href="javascript:toggleInfo('revzen-2007-SICB','abstract')">Abstract</a>] [<a href="javascript:toggleInfo('revzen-2007-SICB','bibtex')">BibTeX</a>]</p></td>
+	<td>2007</td>
+	<td><br/>Vol. 47(suppl 1)Integr Comp Biol, pp. e1-152&nbsp;</td>
+	<td>conference</td>
+	<td><a href="http://dx.doi.org/10.1093/icb/icm104">DOI</a> &nbsp;</td>
+</tr>
+<tr id="abs_revzen-2007-SICB" class="abstract noshow">
+	<td colspan="6"><b>Abstract</b>: Perturbation of simple passive, dynamic models of legged locomotion suggest the possibility of self-stabilization with minimal neural feedback. Rapid recovery from brief impulses to the body of fast, sprawled-posture runners and the absence of muscle activation pattern changes while traversing rough terrain support the hypothesis of recovery by mechanical feedback alone. Large and complex perturbations to rapid running insects imposed by a single, hip-high hurdle do produce significant leg phase and frequency changes showing that sensory feedback must play a role in recovery. To better determine the interrelationship between neural and mechanical feedback, we designed a trackway with a 10 x 25 cm platform insert that could translate laterally to a maximum acceleration of 10g in 50 msec. Cockroaches (Blaberus discoidalis; n=14) running at 308 cm/sec at a step frequency of 11.52.7 Hz onto a movable platform were accelerated laterally at 1g in a 100 msec interval providing a 563 cm/sec specific impulse. By automatically tracking body position and orientation and leg (tarsus) positions, we found no change in leg motion timing for at least 50 msec. Following this delay, animals decreased step frequency for one stride, and then partially recovered frequency thereafter. Results are consistent with previous research showing that the initial rapid recovery is accomplished by mechanical feedback promoting self-stabilization followed by neural feedback modulation of a central pattern generator at a slower rate occurring after a delay comparable to the duration of a step. Funded by NSF FIBR Grant.</td>
+</tr>
+<tr id="bib_revzen-2007-SICB" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@conference{revzen-2007-SICB,
+  author = {S Revzen and J Bishop-Moser and A J Spence and R J Full},
+  title = {Testing Control Models In Rapid Running Insects Using Lateral Ground Translation (abstract only)},
+  booktitle = {Integr Comp Biol},
+  year = {2007},
+  volume = {47},
+  number = {suppl 1},
+  pages = {e1-152},
+  doi = {http://dx.doi.org/10.1093/icb/icm104}
+}
+</pre></td>
+</tr>
+<tr id="revzen-2013-DW" class="entry">
+	<td>Revzen, S., Burden, S.A., Koditschek, D.E. and Sastry, S.S.</td>
+	<td>Pinned equilibria provide robustly stable multilegged locomotion <p class="infolinks">[<a href="javascript:toggleInfo('revzen-2013-DW','bibtex')">BibTeX</a>]</p></td>
+	<td>2013</td>
+	<td>Dynamic Walking&nbsp;</td>
+	<td>conference</td>
+	<td><a href="http://www.cmu.edu/dynamic-walking/files/abstracts/Revzen_2013_DW.pdf">URL</a>&nbsp;</td>
+</tr>
+<tr id="bib_revzen-2013-DW" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@conference{revzen-2013-DW,
+  author = {Revzen, S and Burden, S A and Koditschek, D E and Sastry, S S},
+  title = {Pinned equilibria provide robustly stable multilegged locomotion},
+  booktitle = {Dynamic Walking},
+  year = {2013},
+  note = {https://www.youtube.com/watch?v=omKEjL7YIAk&amp;amp;list=PLVqaARCrz-m9aFEsen8fkW4ZjdaFqRoGL&amp;amp;feature=player_detailpage&amp;amp;t=649teaser talk video},
+  url = {http://www.cmu.edu/dynamic-walking/files/abstracts/Revzen_2013_DW.pdf}
+}
+</pre></td>
+</tr>
+<tr id="revzen-2014-trot" class="entry">
+	<td>Revzen, S., Burden, S. and Kvalheim, M.</td>
+	<td>Why the trot? <p class="infolinks">[<a href="javascript:toggleInfo('revzen-2014-trot','bibtex')">BibTeX</a>]</p></td>
+	<td>2014</td>
+	<td><br/>Vol. 54INTEGRATIVE AND COMPARATIVE BIOLOGY, pp. E174-E174&nbsp;</td>
+	<td>inproceedings</td>
+	<td>&nbsp;</td>
+</tr>
+<tr id="bib_revzen-2014-trot" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@inproceedings{revzen-2014-trot,
+  author = {Revzen, S and Burden, SA and Kvalheim, MD},
+  title = {Why the trot?},
+  booktitle = {INTEGRATIVE AND COMPARATIVE BIOLOGY},
+  year = {2014},
+  volume = {54},
+  pages = {E174--E174}
+}
+</pre></td>
+</tr>
+<tr id="revzen-2008-MBI" class="entry">
+	<td>Revzen, S. and Guckenheimer, J.M.</td>
+	<td>A Dynamical Systems Analysis of Running Cockroaches <p class="infolinks">[<a href="javascript:toggleInfo('revzen-2008-MBI','abstract')">Abstract</a>] [<a href="javascript:toggleInfo('revzen-2008-MBI','bibtex')">BibTeX</a>]</p></td>
+	<td>2008</td>
+	<td>Mathematical Biosciences Institute, Workshop 4 (abstract only)&nbsp;</td>
+	<td>conference</td>
+	<td>&nbsp;</td>
+</tr>
+<tr id="abs_revzen-2008-MBI" class="abstract noshow">
+	<td colspan="6"><b>Abstract</b>: We use methods from dynamical systems theory to analyze movement of /Blaberus discoidalis/ cockroaches. One of our key objectives is to derive dimensionally reduced models that describe the biomechanical synergies used by an animal steadily running on flat ground. By modeling the motion as a stable periodic orbit in a body centered frame of reference, we may apply Floquet theory to the problem. In the absence of noise, the theory predicts a change of coordinates which rectifies the motion transverse to the orbit to a time invariant linear system with modes that decay exponentially. These Floquet modes can be divided into those that are highly damped and those that are weakly damped. Preliminary results give evidence for few weakly damped modes, and for many highly damped modes that decay in less than a stride. We hypothesize that the weakly damped modes form a template for the neuromechanical control of locomotion. We describe our use of diverse tools from motion tracking, numerical analysis, visualization and geometric statistics to fit these periodic orbit models to video recordings of running cockroaches. Our focus is on the numerical estimation of a phase variable and of the linearized first return map, with quantified levels of statistical confidence in the presence of noisy data. </td>
+</tr>
+<tr id="bib_revzen-2008-MBI" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@conference{revzen-2008-MBI,
+  author = {S Revzen and J M Guckenheimer},
+  title = {A Dynamical Systems Analysis of Running Cockroaches},
+  booktitle = {Mathematical Biosciences Institute, Workshop 4 (abstract only)},
+  year = {2008}
+}
+</pre></td>
+</tr>
+<tr id="revzen-2011-sicb" class="entry">
+	<td>Revzen, S., Guckenheimer, J.M. and Full, R.J.</td>
+	<td>Subtle differences in gaits: the perspective of data driven Floquet analysis <p class="infolinks">[<a href="javascript:toggleInfo('revzen-2011-sicb','abstract')">Abstract</a>] [<a href="javascript:toggleInfo('revzen-2011-sicb','bibtex')">BibTeX</a>]</p></td>
+	<td>2011</td>
+	<td>Yearly meeting of the Society for Integrative and Comparative Biology&nbsp;</td>
+	<td>conference</td>
+	<td>&nbsp;</td>
+</tr>
+<tr id="abs_revzen-2011-sicb" class="abstract noshow">
+	<td colspan="6"><b>Abstract</b>: Most rapid forms of animal locomotion involve producing a gait - a rhythmic sequence of body motions that propels the body through space by acting on the environment. Gaits are stable with respect to environmental perturbations. Data driven Floquet analysis promises a quantitative model of gait derived purely from kinematic measurements. The model encompasses familiar concepts such as averaged cycles, phase response curves and stability eigenvalues, as well as the less familiar Floquet modes. Our models of gait provide a prediction of future animal motions against which neuromechanical control hypothesis may be statistically tested. By computing Floquet modes of seemingly similar gaits, we can expose the fact that these gaits are sensitive to perturbations in very different ways -- producing testable hypotheses can that separate these gaits empirically.</td>
+</tr>
+<tr id="bib_revzen-2011-sicb" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@conference{revzen-2011-sicb,
+  author = {Revzen, S and Guckenheimer, J M and Full, R J},
+  title = {Subtle differences in gaits: the perspective of data driven Floquet analysis},
+  booktitle = {Yearly meeting of the Society for Integrative and Comparative Biology},
+  year = {2011}
+}
+</pre></td>
+</tr>
+<tr id="revzen-2009-SICB" class="entry">
+	<td>Revzen, S., Guckenheimer, J.M. and Full, R.J.</td>
+	<td>Study of the neuromechanical control of rhythmic behaviors by floquet analysis (abstract only) <p class="infolinks">[<a href="javascript:toggleInfo('revzen-2009-SICB','abstract')">Abstract</a>] [<a href="javascript:toggleInfo('revzen-2009-SICB','bibtex')">BibTeX</a>]</p></td>
+	<td>2009</td>
+	<td>Yearly meeting of the Society for Integrative and Comparative Biology&nbsp;</td>
+	<td>conference</td>
+	<td>&nbsp;</td>
+</tr>
+<tr id="abs_revzen-2009-SICB" class="abstract noshow">
+	<td colspan="6"><b>Abstract</b>: The control of rhythmic behaviors like locomotion is difficult to study when compared with control of fixed-point behaviors such as standing. The problem is largly due to dynamics: perturbations away from the typical cycle may have surprising and counter-intuitive consequences later on the in the same cycle or even several cycles in the future. These causal relationships between seemingly different perturbations at different phases of motion can make conclusions drawn from PCA and other matrix factorization methods misleading or erroneous. Dynamical systems theory describes the interrelation of perturbations in different parts of a cycle using Floquet Theory. The theory guarantees the existence of a change of coordinates that rectifies the dynamics to the simple linear form found in fixed-point systems. We developed our method for estimating a Floquet structure from kinematics to test the ``Templates and Anchors Hypothesis.'' This hypothesis states that rapid locomotion is controlled by restricting the many degrees of freedom of the animal's morphology, as represented by an ``anchored'' model, to follow low dimensional ``template'' dynamics. The presence of a template would express itself in the Floquet structure as having a few weakly damped modes that decay over multiple strides and span the template, and many strongly damped modes that decay within a stride or a step, and span the remainder of the degrees of freedom of the anchor. Our preliminary results suggest that running death's-head cockroaches (Blaberus discoidalis) posses a template that can be distinguished in the Floquet structure of the animals' kinematics. We believe our methodology can be applied to the study of neuromechanical control in a broad range of rhythmic behaviors.</td>
+</tr>
+<tr id="bib_revzen-2009-SICB" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@conference{revzen-2009-SICB,
+  author = {S Revzen and J M Guckenheimer and R J Full},
+  title = {Study of the neuromechanical control of rhythmic behaviors by floquet analysis (abstract only)},
+  booktitle = {Yearly meeting of the Society for Integrative and Comparative Biology},
+  year = {2009}
+}
+</pre></td>
+</tr>
+<tr id="revzen-2012-drg" class="entry">
+	<td>Revzen, S., Ilhan, B.D. and Koditschek, D.E.</td>
+	<td>Dynamical Trajectory Replanning for Uncertain Environments <p class="infolinks">[<a href="javascript:toggleInfo('revzen-2012-drg','abstract')">Abstract</a>] [<a href="javascript:toggleInfo('revzen-2012-drg','bibtex')">BibTeX</a>]</p></td>
+	<td>2012</td>
+	<td>IEEE Conference on Decision and Control&nbsp;</td>
+	<td>conference</td>
+	<td><a href="http://repository.upenn.edu/ese_papers/644/">URL</a>&nbsp;</td>
+</tr>
+<tr id="abs_revzen-2012-drg" class="abstract noshow">
+	<td colspan="6"><b>Abstract</b>: We propose a dynamical reference generator equipped with an augmented transient "replanning" subsystem that modulates a feedback controller's efforts to force a me- chanical plant to track the reference signal. The replanner alters the reference generator's output in the face of unanticipated disturbances that drive up the tracking error. We demonstrate that the new reference generator cannot destabilize the tracker, that tracking errors converge in the absence of disturbance, and that the overall coupled reference-tracker system cannot be destabilized by disturbances of bounded energy. We report the results of simulation studies exploring the performance of this new design applied to a two dimensional point mass particle interacting with fixed but unknown terrain obstacles.</td>
+</tr>
+<tr id="bib_revzen-2012-drg" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@conference{revzen-2012-drg,
+  author = {S Revzen and Ilhan, B D and Koditschek, D E},
+  title = {Dynamical Trajectory Replanning for Uncertain Environments},
+  booktitle = {IEEE Conference on Decision and Control},
+  year = {2012},
+  url = {http://repository.upenn.edu/ese_papers/644/}
+}
+</pre></td>
+</tr>
+<tr id="revzen-2007-ASB" class="entry">
+	<td>Revzen, S., Koditschek, D.E. and Full, R.J.</td>
+	<td>Selecting among Neuromechnical Control Architectures using Kinematic Phase and perturbation experiments (poster) <p class="infolinks">[<a href="javascript:toggleInfo('revzen-2007-ASB','abstract')">Abstract</a>] [<a href="javascript:toggleInfo('revzen-2007-ASB','bibtex')">BibTeX</a>]</p></td>
+	<td>2007</td>
+	<td>Yearly meeting of the American Society of Biomechanics&nbsp;</td>
+	<td>conference</td>
+	<td>&nbsp;</td>
+</tr>
+<tr id="abs_revzen-2007-ASB" class="abstract noshow">
+	<td colspan="6"><b>Abstract</b>: We use an experimental paradigm grounded in dynamical systems (DS) theory to select which among several competing neuro-mechanical control architectures (NCA) could be in use in a given rhythmic motor behavior by using kinematic data alone. Our method allows us to extrapolate animal motions based on a few consecutive video frames, and compare the predicted motion to perturbation experiment outcomes. We apply the method to the study of control of running in the cockroach Blaberus discoidalis, and discuss its broader utility in a variety of biomechanical problems, e.g. in potential clinical application of motor learning tasks </td>
+</tr>
+<tr id="bib_revzen-2007-ASB" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@conference{revzen-2007-ASB,
+  author = {S Revzen and D E Koditschek and R J Full},
+  title = {Selecting among Neuromechnical Control Architectures using Kinematic Phase and perturbation experiments (poster)},
+  booktitle = {Yearly meeting of the American Society of Biomechanics},
+  year = {2007}
+}
+</pre></td>
+</tr>
+<tr id="revzen-2006-SICB" class="entry">
+	<td>Revzen, S., Koditschek, D.E. and Full, R.J.</td>
+	<td>Testing feedforward control models in rapid running insects using large perturbations (abstract only) <p class="infolinks">[<a href="javascript:toggleInfo('revzen-2006-SICB','abstract')">Abstract</a>] [<a href="javascript:toggleInfo('revzen-2006-SICB','bibtex')">BibTeX</a>]</p></td>
+	<td>2006</td>
+	<td><br/>Vol. 46(suppl 1)Integr Comp Biol, pp. e1-162&nbsp;</td>
+	<td>conference</td>
+	<td><a href="http://dx.doi.org/10.1093/icb/icl056">DOI</a> &nbsp;</td>
+</tr>
+<tr id="abs_revzen-2006-SICB" class="abstract noshow">
+	<td colspan="6"><b>Abstract</b>: Sensory feedback dominates limb coordination in walking. By contrast, insects are capable of stable running over rough surfaces with no detectable change in motor output to major leg muscles. Passive, dynamic models suggest self-stabilization. A central pattern generator forcing a mass-spring system can model these observations. RHex, a rapid running, bio-inspired hexapedal robot is a physical realization of these models. The robot can self-stabilize over simple terrain when its leg motors are driven with feedforward ``clock'' (CPG-like) signals only. However, RHex requires sensory feedback to its clock to attain comparable speeds over complex terrain. With such feedback, traversal of significant obstacles induces phase shifts in motor timing to coordinate legs. We examined high-speed running in cockroaches to determine whether neural feedback shifts leg phase and/or frequency after encountering an obstacle. Cockroaches were tripped with a hip-high hurdle while running at 25 cm/s on a treadmill. High-speed video tracked the body and distal portion of all six legs versus time. Perturbations struck different legs in different locations, but always caused a significant disruption to the mechanical system for the several strides traversing the obstacle. Cockroaches incurred significant phase and frequency changes. When the pattern of leg motions was extrapolated from before the obstacle to after the obstacle, it failed to match the animals' pattern after recovery in 17 of 22 trials. Results suggest that sensory feedback is likely sent to a CPG-like clock driving leg movements, as required by our physical model. We reject the hypothesis that animals use a feed-forward clock without neural feedback when challenged with large perturbations in rapid running.</td>
+</tr>
+<tr id="bib_revzen-2006-SICB" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@conference{revzen-2006-SICB,
+  author = {S Revzen and D E Koditschek and R J Full},
+  title = {Testing feedforward control models in rapid running insects using large perturbations (abstract only)},
+  booktitle = {Integr Comp Biol},
+  year = {2006},
+  volume = {46},
+  number = {suppl 1},
+  pages = {e1-162},
+  doi = {http://dx.doi.org/10.1093/icb/icl056}
+}
+</pre></td>
+</tr>
+<tr id="revzen-2010-icrackbot" class="entry">
+	<td>Revzen, S., Sastra, J., Eckenstein, N. and Yim</td>
+	<td>CKBot Platform for the ICRA 2010 Planetary Challenge <p class="infolinks">[<a href="javascript:toggleInfo('revzen-2010-icrackbot','abstract')">Abstract</a>] [<a href="javascript:toggleInfo('revzen-2010-icrackbot','bibtex')">BibTeX</a>]</p></td>
+	<td>2010</td>
+	<td>Workshop "Modular Robots: The State of the Art", Proceedings of IEEE ICRA conference, pp. 11-12&nbsp;</td>
+	<td>inproceedings</td>
+	<td>&nbsp;</td>
+</tr>
+<tr id="abs_revzen-2010-icrackbot" class="abstract noshow">
+	<td colspan="6"><b>Abstract</b>: The ICRA Planetary Contingency Challenge 2010 will include 3 teams that will be using the new CKBot module and software package. This paper will present some of the new aspects of this hardware, underlying software architecture for quickly programming the modules and will include a tutorial for these teams.</td>
+</tr>
+<tr id="bib_revzen-2010-icrackbot" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@inproceedings{revzen-2010-icrackbot,
+  author = {Revzen, S and Sastra, J and Eckenstein, N and Yim},
+  title = {CKBot Platform for the ICRA 2010 Planetary Challenge},
+  booktitle = {Workshop "Modular Robots: The State of the Art", Proceedings of IEEE ICRA conference},
+  year = {2010},
+  pages = {11-12}
+}
+</pre></td>
+</tr>
+<tr id="sastra-2012-clawar" class="entry">
+	<td>Sastra, J., Revzen, S. and Yim, M.</td>
+	<td>Softer legs allow a modular hexapod to run faster <p class="infolinks">[<a href="javascript:toggleInfo('sastra-2012-clawar','bibtex')">BibTeX</a>]</p></td>
+	<td>2012</td>
+	<td>Climbing and Walking Robotics (CLAWAR)&nbsp;</td>
+	<td>conference</td>
+	<td>&nbsp;</td>
+</tr>
+<tr id="bib_sastra-2012-clawar" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@conference{sastra-2012-clawar,
+  author = {Sastra, J and Revzen, S and Yim, M},
+  title = {Softer legs allow a modular hexapod to run faster},
+  booktitle = {Climbing and Walking Robotics (CLAWAR)},
+  year = {2012}
+}
+</pre></td>
+</tr>
+<tr id="spence-2007-SICB" class="entry">
+	<td>Spence, A.J., Revzen, S., Yeates, K., Mullens, C. and Full, R.J.</td>
+	<td>Insects running on compliant surfaces <p class="infolinks">[<a href="javascript:toggleInfo('spence-2007-SICB','abstract')">Abstract</a>] [<a href="javascript:toggleInfo('spence-2007-SICB','bibtex')">BibTeX</a>]</p></td>
+	<td>2007</td>
+	<td><br/>Vol. 47(suppl 1), pp. e1-152&nbsp;</td>
+	<td>article</td>
+	<td><a href="http://dx.doi.org/10.1093/icb/icm104">DOI</a> &nbsp;</td>
+</tr>
+<tr id="abs_spence-2007-SICB" class="abstract noshow">
+	<td colspan="6"><b>Abstract</b>: Human runners and hoppers attempt to adjust their leg stiffness to maintain similar center of mass (COM) dynamics when confronted with a compliant substrate. Dynamic materials testing of cockroach legs shows that their behavior in the sagittal plane is largely determined by passive exoskeletal properties. We tested the hypothesis that rapid running cockroaches maintain their COM mechanics by compensating for a compliant substrate. Cockroaches Blaberus discoidalis ran from a rigid Plexiglas surface onto an elastic substrate of stiffness (8-13 N/m) equal to 2/3 its virtual leg spring stiffness (15 N/m for all three legs of a tripod). We directly measured the animals COM dynamics using a novel 3-axis, MEMs accelerometer configured as a backpack placed near its COM. Vertical acceleration of the COM on the elastic surface had smaller peak-to-peak amplitudes (9.3 0.012 m/s2, n = 374 steps on elastic substrate, vs. 12 0.007 m/s2, n = 879 steps on rigid substrate; p<0.0001). Step duration was slightly longer (44.7 0.044 ms, elastic versus 42.6 0.016 ms rigid; p = 0.019) and forward velocity was actually faster on the elastic substrate (35.6 0.004 cm/s on elastic substrate, versus 33.4 0.002 cm/s on rigid substrate; p < 0.0001). We conclude that the cockroach does not maintain similar vertical accelerations and therefore COM trajectories when encountering an elastic substrate. Despite their inability to maintain constant COM dynamics, cockroaches moved effectively on complaint substrates. Funded by NSF FIBR.</td>
+</tr>
+<tr id="bib_spence-2007-SICB" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@article{spence-2007-SICB,
+  author = {A J Spence and S Revzen and K Yeates and C Mullens and R J Full},
+  title = {Insects running on compliant surfaces},
+  year = {2007},
+  volume = {47},
+  number = {suppl 1},
+  pages = {e1-152},
+  note = {(abstract only)},
+  doi = {http://dx.doi.org/10.1093/icb/icm104}
+}
+</pre></td>
+</tr>
+<tr id="wilshin-2012-sicb" class="entry">
+	<td>Wilshin, S., Haynes, G.C., Reeve, M., Revzen, S. and Spence, A.J.</td>
+	<td>How is dog gait affected by natural rough terrain? <p class="infolinks">[<a href="javascript:toggleInfo('wilshin-2012-sicb','abstract')">Abstract</a>] [<a href="javascript:toggleInfo('wilshin-2012-sicb','bibtex')">BibTeX</a>]</p></td>
+	<td>2012</td>
+	<td>Integr Comp Biol&nbsp;</td>
+	<td>conference</td>
+	<td>&nbsp;</td>
+</tr>
+<tr id="abs_wilshin-2012-sicb" class="abstract noshow">
+	<td colspan="6"><b>Abstract</b>: n nature legged animals depend on locomotion over uneven terrain for survival and reproduction. One way in which animals may optimize their locomotor behaviour for this task is by adjusting the relative timing of their leg recirculation, or gait. Therefore, we asked how the relative leg timing of quadrupeds changes during locomotion over natural, uneven terrain, and compared this to our idealised notions of the walk, trot and gallop. Five male dogs of shoulder height 522.0 +/- 62.6 mm (mean +/- s.d.) and body mass 20.0 +/- 2.5 kg (mean +/- s.d.) were trialled at nominal walk, trot, and gallop speeds over flat and uneven terrain. Mean perturbation size on uneven terrain was 54.8 +/- 44.6 mm versus 4.2 +/- 3.1 mm on flat. Dogs were fitted with a wirelessly synchronized suite of five sensors, comprised of Global Position System and inertial measurement units. One device was attached to the proximal-most segment of each leg, and a fifth on the midline of the back at the front legs. Raw sensor data were used to compute animal speed, position, and a continuous estimate of leg phases. The centroids of relative leg phase (averaged across time within each stride), describing the gait used by the dog on each terrain at each nominal gait speed, were significantly different on the rough terrain (linear mixed-model; n=5 dogs, p<0.05). At walking speeds on the rough terrain, dog gait moves towards the trot. Averages and distances between gaits in relative leg phase space do not account for the dynamical and geometric structure of these phase variables, however. Theoretical developments required to handle these data will be discussed. To explain why we observe these changes in dog gait, we propose experiments in a physical model, the robot XRL.</td>
+</tr>
+<tr id="bib_wilshin-2012-sicb" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@conference{wilshin-2012-sicb,
+  author = {Wilshin, S and Haynes, G C and Reeve, M and Revzen, S and Spence, A J},
+  title = {How is dog gait affected by natural rough terrain?},
+  booktitle = {Integr Comp Biol},
+  year = {2012}
+}
+</pre></td>
+</tr>
+<tr id="yu-2016-trotting" class="entry">
+	<td>Yu, M.Y., Liedtk, A. and Revzen, S.</td>
+	<td>Trotting horses synchronize their legs during the second half of stance <p class="infolinks">[<a href="javascript:toggleInfo('yu-2016-trotting','bibtex')">BibTeX</a>]</p></td>
+	<td>2016</td>
+	<td><br/>Vol. 56INTEGRATIVE AND COMPARATIVE BIOLOGY, pp. E247-E247&nbsp;</td>
+	<td>inproceedings</td>
+	<td>&nbsp;</td>
+</tr>
+<tr id="bib_yu-2016-trotting" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@inproceedings{yu-2016-trotting,
+  author = {Yu, M Y and Liedtk, A and Revzen, S},
+  title = {Trotting horses synchronize their legs during the second half of stance},
+  booktitle = {INTEGRATIVE AND COMPARATIVE BIOLOGY},
+  year = {2016},
+  volume = {56},
+  pages = {E247--E247}
+}
+</pre></td>
+</tr>
+<tr id="zhao-2015-RSS" class="entry">
+	<td>Zhao, D., Schaffer, C. and Revzen, S.</td>
+	<td>Steering hexapedal robots <p class="infolinks">[<a href="javascript:toggleInfo('zhao-2015-RSS','bibtex')">BibTeX</a>]</p></td>
+	<td>2015</td>
+	<td>IEEE Robotics Science and Systems conference, Miniature Legged Robots Workshop&nbsp;</td>
+	<td>inproceedings</td>
+	<td><a href="https://sites.google.com/site/miniatureleggedrobots">URL</a>&nbsp;</td>
+</tr>
+<tr id="bib_zhao-2015-RSS" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@inproceedings{zhao-2015-RSS,
+  author = {D Zhao and C Schaffer and S Revzen},
+  title = {Steering hexapedal robots},
+  booktitle = {IEEE Robotics Science and Systems conference, Miniature Legged Robots Workshop},
+  year = {2015},
+  url = {https://sites.google.com/site/miniatureleggedrobots}
+}
+</pre></td>
+</tr>
+</tbody>
+</table>
+<footer>
+ <small>Created by <a href="http://jabref.sourceforge.net">JabRef</a> on 14/06/2016.</small>
+</footer>
+<!-- file generated by JabRef -->
+</body>
+</html>

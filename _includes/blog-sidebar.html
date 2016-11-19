@@ -1,0 +1,43 @@
+<!--
+<div class='links'>
+  <h3>Archives</h3>
+  <HR SIZE="6">
+  <ul>
+    {% for dates in site.month %}
+      <li><a href="#">{{date | capitalize}}</a></li>
+    {% endfor %}
+  </ul>
+</div> -->
+
+<div class='links'>
+  <h3>Recent Posts</h3>
+  <HR SIZE="6">
+  <ul>
+    {% for post in site.posts %}
+      {% if forloop.index > 6 %}
+        {% break %}
+      {% endif %}
+      <li><a href="{{post.url}}">{{post.title | capitalize | strip_html | truncate:60}}</a></li>
+    {% endfor %}
+  </ul>
+</div>
+
+<div class='links'>
+  <h3>Categories</h3>
+  <HR SIZE="6">
+  <ul>
+      <li><a href="booklist.html">Booklist</a></li>
+	  <li><a href="news.html">News</a></li>
+  </ul>
+</div>
+
+<div class='links'>
+  <h3>Search</h3>
+  <HR SIZE="6">
+  <form action="/search.html" method="get">
+  <input type="text" id="search_box" name="query">
+  <input type="submit" class="button small" value="search"  >
+</form>
+</div>
+
+<div class='four spacing'></div>

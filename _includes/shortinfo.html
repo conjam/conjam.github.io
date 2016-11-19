@@ -1,0 +1,11 @@
+{% capture photo %}{% file_exists images/people/{{person.categories}}/{{person.uniquename}}.jpg %}{% endcapture %}
+{% if photo == "true" %}
+  <img src="/images/people/{{person.categories}}/{{person.uniquename}}.jpg" style="width:150px">
+{% else %}
+	<img src="/images/people/stock.jpg" style="width:150px">
+{% endif %}
+
+<h4><a href="{{person.url}}" style= "color:#005580">{{person.name}}</a></h4>
+<br>
+<p>{{person.title}}</p>
+

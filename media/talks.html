@@ -1,0 +1,25 @@
+---
+layout: default
+---
+
+<div class='full'>
+  <div class='row'>
+	<h3>Talks</h3>
+	<HR SIZE="8" width = "200">
+	<table>
+		<tbody>
+		{% for out_evnt in site.outreach %}
+			<tr>
+				<td>
+					<iframe width="300" height="169" align="left" style="padding:15px" src="https://www.youtube.com/embed/{{out_evnt.youtubeID}}" frameborder="0" allowfullscreen></iframe>
+					<br>
+					<h4>{{out_evnt.title}}</h4>
+					<br><br>
+					<p>{{out_evnt.description}} </p>
+				</td>
+			</tr>
+		{% endfor %}
+		</tbody>
+	</table>
+    </div>
+</div>

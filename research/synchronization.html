@@ -1,0 +1,47 @@
+---
+layout: default
+section_id: Event-Driven Oscillator Synchronization
+---
+<div class='full'>
+  <div class='row'>
+    <div class='large-9 columns'>
+		<h2>Background</h2>
+		<div>
+			<p>A well-known effect in classical dynamical systems is oscillator entrainment, wherein the solutions of a collection of coupled, first-order oscillators exhibit a limiting behavior where all the oscillators synchronize within a phase-shift. Recently, Sam Burden et. al. developed a notion of event-selected vector fields, which can be used to design oscillator coupling that can induce synchronization for <i>hybrid</i> system.</p>
+			<p> Hybrid dynanmical systems are an extensive topic, but roughly are those where the governing equations are no longer smooth, or even continuous. They permit 'jumps' or 'corners' in the equations of motion, and are of considerable interest in the study of locomotion. For example, rather than attempting to develop a high-order model of a foot impacting the ground, that takes into account the elastiscity of the limb, shocks, and other effects, a lower-order hybrid model which uses <i>different equations</i> to govern the dynamics in the air, and of those on the ground could be used. Anoter interpretation of this idea is that the 'current' governing vector field is selected from a collection of candidate vector fields based on the state of the system. However, mainly classical results from the theory of differential equations assumes, at least, continuity, so new theorectical tools are required. Event-selected vector fields are one such tool, where the mechanism that selects the governing field is a collection of intersecting manifolds that are transverse to all candidate fields.</p> 
+
+			<p> Descriptive hybrid dynamic models of legged animals (i.e. - models that describe measured data, rather than composed from knowledge of physics) end up being event-selected vector fields, where the governing equations are smooth except at a finite set of switching surfaces, corresponding to leg (potential simultaenous, or near simultaenous) touchdown events. The application of this theory presents a method of synchronizing <i>n</i> first-order oscillators, i.e, a system of the form, for $q \in Q:= (S^1)^d, \omega \in \mathbb{R}, u :Q \to TQ $
+			$$  \dot{q} = \omega {\bf{1}} + u(q)  $$	
+			By choosing the appropriate $u$, which turns out to be a piece-wise constant feedback, $ \forall i,j : q_i = q_j$. One exciting feature of the feedback is that it is piece-wise constant, and can be forumlated to depend only one crossing an event surface. In other words, whenever a event occurs (e.g, a foot-fall) the control input is changed from one constant value to another. Besides being mathematically elegant, it also is data-efficient for implementation. Rather than relay on a high-bandwidth sensor system that continuously reports the state from which a feedback may be computed, the system only needs to detect the relatively infrequent transition events, which greatly reduces communication bandwidth. Such a feature may be germane to biological control schemes as well, as it has been noted that neural bandwidth for motor control in creatures such as humans is too low to permit active feedback on small ground disturbances. (source? - something like this is true.) </p>
+		</div>
+		<h2> RHex </h2>
+			<div>
+			   <p> In order to validate the synchronization scheme, a collection of first-order oscillators is needed, and given the supposed application to locomotion, the popular 'RHex' robot platform was selected as a testbed. Whereas many Rhex robots ubiquitously employ the Buehler clock  to synchronize the three legs of a tripod, and then implement an alternating tripod gait, the Buehler clock is replaced with a slightly modified version of the control scheme presented above, where the transition manifolds are simply fixed angles on a circle, partitioning the circle into two segments. Correspondingly, the control scheme reduces to an extremely simple mapping. Each leg moves on a cirlce partitioned into two segments. One "fast" and one "slow". When the leg is in the fast region, it is commanded with velocity $\omega_1$, and when the leg angle is a member of the slow interval, it is commanded with velocity $\omega_2 < \omega_1 - \delta $. </p> 
+				<p>The intuition of this is clear : a tripod consists of legs $ q_1, q_2, q_3 $. The lead leg, say, $q_1$, enters the slow region, the other two, $q_2, q_3$, will have a net postive velocity with respect to $q_1$ so will begin to catch up. It's not immediately obvious that they'll ever converge, as $q_1$ might re-enter the fast region before any meaningful reduction in angular differnce is made and 'escape'. In order to ensure convergence, another simple rule is enforced - once a leg slows down, it may not speed up until all three limbs exceed a threshold value. Again, the picture is obvious : each leg indepedently slows down, so that the net diffence between them reduces, and they speed up together so not to degrade the grouping. </p>
+				<p>
+				The described event-driven synchronization scheme for first-order oscillators is the principle mechanism of interest for synchronizing the three limbs of a single tripod. Seperatly,the gait pattern implemented to ambulate the robot a canonical tripod gait, where alternating pairs of three legs cycle to produce a forward motion. In other words, the event-driven methods allows three limbs to 'behave like' a single object, and potentially other control schemes can be used to dictate the behavior between <i>sets</i> of limbs. It would be possibe to use the same technique to synchronize tripods, as well, as the 'inner loop' collapses behavior of $T^3$ to $S^1$, and an 'outer loop' can be thought of as a field on $T^2$.
+				</p>
+				<p>
+				The physical robot is shown below - it was designed and built in cooperation with Kod*Lab, at UPENN. Advantageously, most of the cost and complexity of the system is bundled almost entirely into it's electrical systems - the body is simply foam-core and tape. It provides a durable, lightweight, and easily replacable body that can be manufactured in an afternoon. It houses motor/controller pairs, communication, and power. For debugging, it currently pulls power from a tether, and is commanded through a Python interface connected over USB. To free the platform from a tether, the system can run off of LiPro batteries, and one of the newly-rising embedded linux platforms such as the Intel Edison or Pcduino, can be employed, so that a user logs onto the robot over Wifi, and commands it remotely. 
+				</p>
+
+
+				<div style="text-align: center;">
+				<figure style="display: inline-block;">
+				<img src="/images/old/2015-09-23-rhex_side.jpg" width="300">
+				<div> RHex from the Side </div>
+				</figure>
+				<figure style="display: inline-block;">
+				<img src="/images/old/2015-09-23-rhex_top.jpg" width="300">
+				<div> Rhex from above </div>
+				</figure>
+				</div>
+		</div>
+		<p>
+		The motor controllers are a primary advantage of robot, as opposed to commerically avaiable equivalents. Designed at UPENN, and modifed at Umich, they are naturally completely open hardware and firmware, allowing in-the-loop, high-bandwidth control schemes right at the motor that same-cost commerical controls wouldn't permit. They allow a freedom to implement novel or non-standard control algorithms (such as the event-selected method) in firmware, were-as most commerical motor controllers 'black box' themselves, and have an inflexiable internal controller. 
+		</p>
+
+	</div>
+		{% include research-sidebar.html %}
+  </div>
+</div>

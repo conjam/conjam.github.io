@@ -1,0 +1,56 @@
+---
+layout: default
+section_id: Geometric Embedding
+---
+<div class='full'>
+  <div class='row'>
+    <div class='large-9 columns'>
+	  <h2>Deadbeat Controller</h2>
+      <div>
+		  <p>	Hybrid dynamical systems, being dynamical systems with a non-smooth or discontinous vector field, admit finite-time convergence control strategies that would not be possible for Lipschitz smooth systems. With this in mind, the BIRDS Lab developed a generalized formulation, or 'reciepe', to produce deadbeat controllers to reject transition uncertainty between two vector fields. Importantly, beyond just being deadbeat - which in this context is defined to mean an desired end state is exactly achived after a single execution of a hybrid system, the controllers are almost feedforward. That is, the controllers only require compliance with a pre-computable manifold, obviating the need to actually measure the transition event in an online way. Only knowledge of the system's dynamic state, even implicitly, is required. The result is a generalization of an idea previously explored in the literature for Spring Loaded Inverted Pendulum (SLIP) models rejecting uncertainty in the ground height using a feedfoward controller.
+		  </p>
+		 <p>The idea is illustrated in the figure below. The  problem formulation is such that there are two domains of state space,  A $ \subset R^n $ and B $\subset R^n$ , on which a piece-wise Lipschitz, discontinuous,, or at least non-smooth, vector field is defined. In other words, for a system like $\dot{x} = f(x)$, $f$ would be piece-wise defined for A and B, but each restriction is Lipschitz continuous on the closure the respective domain. The open subset $O$ is a region where A and B intersect, and thus $ \left. f \right|_{A} $ and $ \left. f\right|_{B}$ are defined, and  $\left. f \right|_{A} $ is at least as smooth as  $\left. f \right|_{B} $. A trajectory starts in A - $O$ (so is governed by $ \left. f \right|_{A} $), upon which it is assumed to flow in $O$, switch to  the B dynamics, and flow out of $O$, and terminate at a codimension 1 hypersurface $S$ contained in B - $O$. The control objective is to determine a control input, which may only be exterted in the $A$ region, such that $y_{final} = y_0 + L$, and $y_{final} \in S$.
+		 </p>
+
+		<center><img src="/images/old/scheme.png" style="width: 500px"></center>
+		<center> A pictoral representation of the controls scheme - creating a manifold, and rendering it attractive </center>
+
+
+
+		<p>
+		To help visualize this theorectical framework, it can be applied to  the aforementioned sagittal SLIP model with center-of-mass coordinates $(x,y)$. Assume the goal is to have a SLIP start at some initial height, descend, impact the ground at an unknown height, bounce off, and reascend to an apex position <i> perserving the relative height above the ground </i>. That is, if the initial condition is $y_0$, and the ground is at $L$, then the final apex height should be $y_0 + L$.  The 'A' region would be the initial descent through the air, the '$O$' region would be possible impacts could occur (assuming bounded variation in ground height!), and B would be the combination of ground and ascent dynamics. 'S' would be the apex-surface in B - i.e, the first occurence of $\dot{y} = 0$ post-impact. Here, the control input could be considered leg angle, and a dynamical parameter, such as leg stiffness or damping. The constraint of acting only in $A$ means that control action may only be taken while in the air. Such a limitation might seem artifical at first, but is realistic as a design constraint, and of biological interest. While a limb is in contact with the ground, it is load-bearing. For a robot, such a condition imposes considerations on actuator performance - both free power and motion range may be reduced. For organisms, such as humans, muscles have limited mobility when supporting the body - attempting to reconfigure the leg while the foot is on the ground may lead to strain or damage. When a limb is unloaded, and in the air, it possesses significatly increased freedom, so much more aggressive control actions may be taken. Symbolically, $\left. f \right|_{A} : A \times U \to TA $, but $\left. f \right|_{B} : B \to TB $
+		</p>
+		 <p>
+		 Suppose the tracking objective is represented with a cost-like function $ g : O \times S \to R^d$, such that compliance with the goal maps to $ 0 \in R^d$. Now, as the vector fields are Lipschitz on their domains, the flow map $\Phi_B(t,x)$ is a diffeomorphism - that is, the trajectories in B are unique, smooth, and smoothly depend on parameters. As such, the function $g$ can be pulled back to $g^* : O \to R^d$ , where $$ g^*(x) = g(x, \phi_B(T(x), x))$$ As $g$ is the value of the function <i>at</i> $S$, $g^*$ computes the <i>eventual</i> value $g$ would take for a state $x \in O$ if it were to evolve by the B dynamics. If an additional restriction is posed on $g$, where the goal value of 0 is a regular value, and thus will be a regular value for $g^*$, the pre-image of 0 in $O$ will be a manifold at least as smooth as $ \left. f\right|_{B}$. As the pre-image is sufficiently smooth, trajectories <i><u> in A</u> </i> can be confined to $M := {g^*}^{-1}(0)$! 
+		 </p>
+		 <p>
+		 Examining $M$, it has two properties by definition : if a trajectory governed by the B dynamics has an initial condition $x(t_B) \in M$, then $g(x(t_b), x(T(x(t_b))) = 0$, and it is defined only by $g$, and the dynamics of B. Assuming the dynamics are known, both $g$ and $\Phi_B(t,x)$ are known <i>a priori</i>, and do not depend on a measured state. As such, they defined a <i>feedforward</i> control objective. If a trajectory starting in A evolves into $O$, and while in $O$, completely resides in $M$, then regardless of when the jump from $\Phi_A$ to $\Phi_B$ occurs, $g = 0$. In other words, $M$ is a level set of $g^*$ defined in $O$, so if a curve is confined to a level set, it's image value remains unchanged, by definition.
+		 </p>
+		 <p>
+			For the SLIP example above, the described control problem can be trasliterated into a equation as : $$ g(y_{TD}, y_{AP}) = y_{AP} - (y_{TD}+L) $$ 
+		Where $y_{TD}$ is the touchdown height, $y_{AP}$ is the apex height on ascent, and $L$ is the unknown, but fixed per-execution, ground height. By adjusting the leg angle and damping dynamically during descent, each stride will perfectly track ground height variations, enabling sustained periodic motion. Intuitively, the notion is more transparent than the goal-function formulation may appear at first. Assume at each state during descent, the system is 'virtually' touching down - e.g., if it were to touch down <i>now</i> (for each time), determine where the system will end up. If it ends up in the wrong final state (likely), adjust the state  so that a touch-down at the current virtual height will have the desired outcome. Parameters are naturally included as an augmented state space, so the intuition is the same - at each dynamic state, adjust dynamical parameters so that the terminal dynamic state is as-desired. 
+		 </p>
+
+
+		<div style="text-align: center;">
+		<figure style="display: inline-block;">
+		<img src="/images/old/axisnoneqslip.png" width="500">
+		<div> Example simulated trajectory of SLIP system with feedforward control </div>
+		</figure>
+		<figure style="display: inline-block;">
+		<img src="/images/old/controllaws.png" width="500">
+		<div> The clocked feed-foward control laws </div>
+		</figure>
+		</div>
+
+		<p>
+		The usage of the term feedfoward, while representative, is slightly misleading. The control objective is to ensure that trajectories in $A$ reside within a <i>a priori</i> defined surface. Rendering that surface attractive for general dynamics of $A$ is not a forgone conclusion, and is a seperate design problem. Manifold tracking is a well-studied problem in controls, so may not present a significant obstacle, especially given that it may be accomplished implicitly. That is, as the initial condition of the system is known, for $A$ dynamics that can be solved in closed for in closed form (such as ballistic dynamics), a measurement of time can be mapped to a state, allowing the application of a control law to be 'clocked'. 
+		</p>
+		<p>
+		Given the pre-computable nature of the target manifold, the problem can also be viewed from another perspective. Rather than consider the dynamics of $A$ as something to be controlled away in a plant/controller sense, they can instead be considered a design parameter. 
+		</p>
+		</div>
+	</div>
+   {% include research-sidebar.html %}
+  </div>
+</div>

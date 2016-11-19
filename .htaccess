@@ -1,0 +1,12 @@
+
+
+DirectoryIndex index.html 
+
+Options -Indexes
+
+
+
+
+
+ErrorDocument 404 "<H1>Page not found</H1>"
+

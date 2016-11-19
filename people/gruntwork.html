@@ -1,0 +1,42 @@
+---
+layout: default
+---
+
+<div class='full'>
+	<div class='row'>
+		<div class='large-8 columns'>
+			<h3>People</h3>
+			<h5><i>Current Lab Members</i></h5>
+			<HR SIZE="8" width = "550">
+			<table>
+				<tbody>
+				{% for person in site.people %}
+					{% if person.categories == "current" %}
+					{% if person.level == "graduate" %}
+						{% include forloop.html %}
+					{% endif %}
+					{% endif %}
+				{% endfor %}
+				{% for person in site.people %}
+					{% if person.categories == "current" %}
+					{% if person.level == "masters" %}
+						{% include forloop.html %}
+					{% endif %}
+					{% endif %}
+				{% endfor %}
+				{% for person in site.people %}
+					{% if person.categories == "current" %}
+					{% if person.level == "undergrad" %}
+						{% include forloop.html %}
+					{% endif %}
+					{% endif %}
+				{% endfor %}
+				</tbody>
+			</table>
+			<p> Please contact Professor Revzen to discuss possibilities if you are interested in working in the lab as either an undergrad, graduate student or postdoc. I am open to both collaborative research and supervision of independent research projects on a variety of ecological, evolutionary and behavioral topics (see Research page). </p> 
+		</div>
+		{% include people-sidebar.html %}
+	</div>
+</div>
+
+							

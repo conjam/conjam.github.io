@@ -1,0 +1,39 @@
+---
+layout: default
+---
+
+<div class='full'>
+	<div class='row'>
+		<div class='large-8 columns'>
+			<h3>People</h3>
+			<h5><i>Alumni</i></h5>
+			<HR SIZE="8" width = "470">
+			<table>
+				<tbody>
+				{% for person in site.people %}
+					{% if person.categories == "alumni" %}
+					{% if person.level == "graduate" %}
+						{% include forloop.html %}
+					{% endif %}
+					{% endif %}
+				{% endfor %}
+				{% for person in site.people %}
+					{% if person.categories == "alumni" %}
+					{% if person.level == "masters" %}
+						{% include forloop.html %}
+					{% endif %}
+					{% endif %}
+				{% endfor %}
+				{% for person in site.people %}
+					{% if person.categories == "alumni" %}
+					{% if person.level == "undergrad" %}
+						{% include forloop.html %}
+					{% endif %}
+					{% endif %}
+				{% endfor %}
+				</tbody>
+			</table>
+		</div>
+		{% include people-sidebar.html %}
+	</div>
+</div>

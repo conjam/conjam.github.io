@@ -1,0 +1,20 @@
+---
+layout: people
+---
+{% capture author_photo %}{% file_exists images/people/{{page.categories}}/{{page.uniquename}}.jpg %}{% endcapture %}
+{% if author_photo == "true" %}
+	<img class = "img-padding" src="/images/people/{{page.categories}}/{{page.uniquename}}.jpg" >
+{% else %}
+	<img class = "img-padding" src="/images/people/stock.jpg" >
+{% endif %}
+
+<h2>{{page.name}}</h2>
+<b>{{page.title}} </b>
+<br>
+<h6>{{page.major}}</h6>
+<h4>Education</h4>
+<br>
+<h6> {{page.education}} </h6>
+
+
+<p>{{page.bio}}</p>

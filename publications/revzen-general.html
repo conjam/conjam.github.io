@@ -1,0 +1,868 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<title>JabRef references</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<script type="text/javascript">
+<!--
+// QuickSearch script for JabRef HTML export 
+// Version: 3.0
+//
+// Copyright (c) 2006-2011, Mark Schenk
+//
+// This software is distributed under a Creative Commons Attribution 3.0 License
+// http://creativecommons.org/licenses/by/3.0/
+//
+// Features:
+// - intuitive find-as-you-type searching
+//    ~ case insensitive
+//    ~ ignore diacritics (optional)
+//
+// - search with/without Regular Expressions
+// - match BibTeX key
+//
+
+// Search settings
+var searchAbstract = true;	// search in abstract
+var searchReview = true;	// search in review
+
+var noSquiggles = true; 	// ignore diacritics when searching
+var searchRegExp = false; 	// enable RegExp searches
+
+
+if (window.addEventListener) {
+	window.addEventListener("load",initSearch,false); }
+else if (window.attachEvent) {
+	window.attachEvent("onload", initSearch); }
+
+function initSearch() {
+	// check for quick search table and searchfield
+	if (!document.getElementById('qs_table')||!document.getElementById('quicksearch')) { return; }
+
+	// load all the rows and sort into arrays
+	loadTableData();
+	
+	//find the query field
+	qsfield = document.getElementById('qs_field');
+
+	// previous search term; used for speed optimisation
+	prevSearch = '';
+
+	//find statistics location
+	stats = document.getElementById('stat');
+	setStatistics(-1);
+	
+	// set up preferences
+	initPreferences();
+
+	// shows the searchfield
+	document.getElementById('quicksearch').style.display = 'block';
+	document.getElementById('qs_field').onkeyup = quickSearch;
+}
+
+function loadTableData() {
+	// find table and appropriate rows
+	searchTable = document.getElementById('qs_table');
+	var allRows = searchTable.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+
+	// split all rows into entryRows and infoRows (e.g. abstract, review, bibtex)
+	entryRows = new Array(); infoRows = new Array(); absRows = new Array(); revRows = new Array();
+
+	// get data from each row
+	entryRowsData = new Array(); absRowsData = new Array(); revRowsData = new Array(); 
+	
+	BibTeXKeys = new Array();
+	
+	for (var i=0, k=0, j=0; i<allRows.length;i++) {
+		if (allRows[i].className.match(/entry/)) {
+			entryRows[j] = allRows[i];
+			entryRowsData[j] = stripDiacritics(getTextContent(allRows[i]));
+			allRows[i].id ? BibTeXKeys[j] = allRows[i].id : allRows[i].id = 'autokey_'+j;
+			j ++;
+		} else {
+			infoRows[k++] = allRows[i];
+			// check for abstract/review
+			if (allRows[i].className.match(/abstract/)) {
+				absRows.push(allRows[i]);
+				absRowsData[j-1] = stripDiacritics(getTextContent(allRows[i]));
+			} else if (allRows[i].className.match(/review/)) {
+				revRows.push(allRows[i]);
+				revRowsData[j-1] = stripDiacritics(getTextContent(allRows[i]));
+			}
+		}
+	}
+	//number of entries and rows
+	numEntries = entryRows.length;
+	numInfo = infoRows.length;
+	numAbs = absRows.length;
+	numRev = revRows.length;
+}
+
+function quickSearch(){
+	
+	tInput = qsfield;
+
+	if (tInput.value.length == 0) {
+		showAll();
+		setStatistics(-1);
+		qsfield.className = '';
+		return;
+	} else {
+		t = stripDiacritics(tInput.value);
+
+		if(!searchRegExp) { t = escapeRegExp(t); }
+			
+		// only search for valid RegExp
+		try {
+			textRegExp = new RegExp(t,"i");
+			closeAllInfo();
+			qsfield.className = '';
+		}
+			catch(err) {
+			prevSearch = tInput.value;
+			qsfield.className = 'invalidsearch';
+			return;
+		}
+	}
+	
+	// count number of hits
+	var hits = 0;
+
+	// start looping through all entry rows
+	for (var i = 0; cRow = entryRows[i]; i++){
+
+		// only show search the cells if it isn't already hidden OR if the search term is getting shorter, then search all
+		if(cRow.className.indexOf('noshow')==-1 || tInput.value.length <= prevSearch.length){
+			var found = false; 
+
+			if (entryRowsData[i].search(textRegExp) != -1 || BibTeXKeys[i].search(textRegExp) != -1){ 
+				found = true;
+			} else {
+				if(searchAbstract && absRowsData[i]!=undefined) {
+					if (absRowsData[i].search(textRegExp) != -1){ found=true; } 
+				}
+				if(searchReview && revRowsData[i]!=undefined) {
+					if (revRowsData[i].search(textRegExp) != -1){ found=true; } 
+				}
+			}
+			
+			if (found){
+				cRow.className = 'entry show';
+				hits++;
+			} else {
+				cRow.className = 'entry noshow';
+			}
+		}
+	}
+
+	// update statistics
+	setStatistics(hits)
+	
+	// set previous search value
+	prevSearch = tInput.value;
+}
+
+
+// Strip Diacritics from text
+// http://stackoverflow.com/questions/990904/javascript-remove-accents-in-strings
+
+// String containing replacement characters for stripping accents 
+var stripstring = 
+    'AAAAAAACEEEEIIII'+
+    'DNOOOOO.OUUUUY..'+
+    'aaaaaaaceeeeiiii'+
+    'dnooooo.ouuuuy.y'+
+    'AaAaAaCcCcCcCcDd'+
+    'DdEeEeEeEeEeGgGg'+
+    'GgGgHhHhIiIiIiIi'+
+    'IiIiJjKkkLlLlLlL'+
+    'lJlNnNnNnnNnOoOo'+
+    'OoOoRrRrRrSsSsSs'+
+    'SsTtTtTtUuUuUuUu'+
+    'UuUuWwYyYZzZzZz.';
+
+function stripDiacritics(str){
+
+    if(noSquiggles==false){
+        return str;
+    }
+
+    var answer='';
+    for(var i=0;i<str.length;i++){
+        var ch=str[i];
+        var chindex=ch.charCodeAt(0)-192;   // Index of character code in the strip string
+        if(chindex>=0 && chindex<stripstring.length){
+            // Character is within our table, so we can strip the accent...
+            var outch=stripstring.charAt(chindex);
+            // ...unless it was shown as a '.'
+            if(outch!='.')ch=outch;
+        }
+        answer+=ch;
+    }
+    return answer;
+}
+
+// http://stackoverflow.com/questions/3446170/escape-string-for-use-in-javascript-regex
+// NOTE: must escape every \ in the export code because of the JabRef Export...
+function escapeRegExp(str) {
+  return str.replace(/[-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
+}
+
+function toggleInfo(articleid,info) {
+
+	var entry = document.getElementById(articleid);
+	var abs = document.getElementById('abs_'+articleid);
+	var rev = document.getElementById('rev_'+articleid);
+	var bib = document.getElementById('bib_'+articleid);
+	
+	if (abs && info == 'abstract') {
+		abs.className.indexOf('noshow') == -1?abs.className = 'abstract noshow':abs.className = 'abstract show';
+	} else if (rev && info == 'review') {
+		rev.className.indexOf('noshow') == -1?rev.className = 'review noshow':rev.className = 'review show';
+	} else if (bib && info == 'bibtex') {
+		bib.className.indexOf('noshow') == -1?bib.className = 'bibtex noshow':bib.className = 'bibtex show';
+	} else { 
+		return;
+	}
+
+	// check if one or the other is available
+	var revshow; var absshow; var bibshow;
+	(abs && abs.className.indexOf('noshow') == -1)? absshow = true: absshow = false;
+	(rev && rev.className.indexOf('noshow') == -1)? revshow = true: revshow = false;	
+	(bib && bib.className.indexOf('noshow') == -1)? bibshow = true: bibshow = false;
+	
+	// highlight original entry
+	if(entry) {
+		if (revshow || absshow || bibshow) {
+		entry.className = 'entry highlight show';
+		} else {
+		entry.className = 'entry show';
+		}
+	}
+	
+	// When there's a combination of abstract/review/bibtex showing, need to add class for correct styling
+	if(absshow) {
+		(revshow||bibshow)?abs.className = 'abstract nextshow':abs.className = 'abstract';
+	} 
+	if (revshow) {
+		bibshow?rev.className = 'review nextshow': rev.className = 'review';
+	}	
+	
+}
+
+function setStatistics (hits) {
+	if(hits < 0) { hits=numEntries; }
+	if(stats) { stats.firstChild.data = hits + '/' + numEntries}
+}
+
+function getTextContent(node) {
+	// Function written by Arve Bersvendsen
+	// http://www.virtuelvis.com
+	
+	if (node.nodeType == 3) {
+	return node.nodeValue;
+	} // text node
+	if (node.nodeType == 1 && node.className != "infolinks") { // element node
+	var text = [];
+	for (var chld = node.firstChild;chld;chld=chld.nextSibling) {
+		text.push(getTextContent(chld));
+	}
+	return text.join("");
+	} return ""; // some other node, won't contain text nodes.
+}
+
+function showAll(){
+	closeAllInfo();
+	for (var i = 0; i < numEntries; i++){ entryRows[i].className = 'entry show'; }
+}
+
+function closeAllInfo(){
+	for (var i=0; i < numInfo; i++){
+		if (infoRows[i].className.indexOf('noshow') ==-1) {
+			infoRows[i].className = infoRows[i].className + ' noshow';
+		}
+	}
+}
+
+function clearQS() {
+	qsfield.value = '';
+	showAll();
+}
+
+function redoQS(){
+	showAll();
+	quickSearch(qsfield);
+}
+
+function updateSetting(obj){
+	var option = obj.id;
+	var checked = obj.value;
+
+	switch(option)
+	 {
+	 case "opt_searchAbs":
+	   searchAbstract=!searchAbstract;
+	   redoQS();
+	   break;
+	 case "opt_searchRev":
+	   searchReview=!searchReview;
+	   redoQS();
+	   break;
+	 case "opt_useRegExp":
+	   searchRegExp=!searchRegExp;
+	   redoQS();
+	   break;
+	 case "opt_noAccents":
+	   noSquiggles=!noSquiggles;
+	   loadTableData();
+	   redoQS();
+	   break;
+	 }
+}
+
+function initPreferences(){
+	if(searchAbstract){document.getElementById("opt_searchAbs").checked = true;}
+	if(searchReview){document.getElementById("opt_searchRev").checked = true;}
+	if(noSquiggles){document.getElementById("opt_noAccents").checked = true;}
+	if(searchRegExp){document.getElementById("opt_useRegExp").checked = true;}
+	
+	if(numAbs==0) {document.getElementById("opt_searchAbs").parentNode.style.display = 'none';}
+	if(numRev==0) {document.getElementById("opt_searchRev").parentNode.style.display = 'none';}
+}
+
+function toggleSettings(){
+	var togglebutton = document.getElementById('showsettings');
+	var settings = document.getElementById('settings');
+	
+	if(settings.className == "hidden"){
+		settings.className = "show";
+		togglebutton.innerText = "close settings";
+		togglebutton.textContent = "close settings";
+	}else{
+		settings.className = "hidden";
+		togglebutton.innerText = "settings...";		
+		togglebutton.textContent = "settings...";
+	}
+}
+
+-->
+</script>
+<style type="text/css">
+body { background-color: white; font-family: Arial, sans-serif; font-size: 13px; line-height: 1.2; padding: 1em; color: #2E2E2E; margin: auto 2em; }
+
+form#quicksearch { width: auto; border-style: solid; border-color: gray; border-width: 1px 0px; padding: 0.7em 0.5em; display:none; position:relative; }
+span#searchstat {padding-left: 1em;}
+
+div#settings { margin-top:0.7em; /* border-bottom: 1px transparent solid; background-color: #efefef; border: 1px grey solid; */ }
+div#settings ul {margin: 0; padding: 0; }
+div#settings li {margin: 0; padding: 0 1em 0 0; display: inline; list-style: none; }
+div#settings li + li { border-left: 2px #efefef solid; padding-left: 0.5em;}
+div#settings input { margin-bottom: 0px;}
+
+div#settings.hidden {display:none;}
+
+#showsettings { border: 1px grey solid; padding: 0 0.5em; float:right; line-height: 1.6em; text-align: right; }
+#showsettings:hover { cursor: pointer; }
+
+.invalidsearch { background-color: red; }
+input[type="button"] { background-color: #efefef; border: 1px #2E2E2E solid;}
+
+table { width: 100%; empty-cells: show; border-spacing: 0em 0.2em; margin: 1em 0em; border-style: none; }
+th, td { border: 1px gray solid; border-width: 1px 1px; padding: 0.5em; vertical-align: top; text-align: left; }
+th { background-color: #efefef; }
+td + td, th + th { border-left: none; }
+
+td a { color: navy; text-decoration: none; }
+td a:hover  { text-decoration: underline; }
+
+tr.noshow { display: none;}
+tr.highlight td { background-color: #EFEFEF; border-top: 2px #2E2E2E solid; font-weight: bold; }
+tr.abstract td, tr.review td, tr.bibtex td { background-color: #EFEFEF; text-align: justify; border-bottom: 2px #2E2E2E solid; }
+tr.nextshow td { border-bottom: 1px gray solid; }
+
+tr.bibtex pre { width: 100%; overflow: auto; white-space: pre-wrap;}
+p.infolinks { margin: 0.3em 0em 0em 0em; padding: 0px; }
+
+@media print {
+	p.infolinks, #qs_settings, #quicksearch, t.bibtex { display: none !important; }
+	tr { page-break-inside: avoid; }
+}
+</style>
+</head>
+<body>
+
+<form action="" id="quicksearch">
+<input type="text" id="qs_field" autocomplete="off" placeholder="Type to search..." /> <input type="button" onclick="clearQS()" value="clear" />
+<span id="searchstat">Matching entries: <span id="stat">0</span></span>
+<div id="showsettings" onclick="toggleSettings()">settings...</div>
+<div id="settings" class="hidden">
+<ul>
+<li><input type="checkbox" class="search_setting" id="opt_searchAbs" onchange="updateSetting(this)"><label for="opt_searchAbs"> include abstract</label></li>
+<li><input type="checkbox" class="search_setting" id="opt_searchRev" onchange="updateSetting(this)"><label for="opt_searchRev"> include review</label></li>
+<li><input type="checkbox" class="search_setting" id="opt_useRegExp" onchange="updateSetting(this)"><label for="opt_useRegExp"> use RegExp</label></li>
+<li><input type="checkbox" class="search_setting" id="opt_noAccents" onchange="updateSetting(this)"><label for="opt_noAccents"> ignore accents</label></li>
+</ul>
+</div>
+</form>
+<table id="qs_table" border="1">
+<thead><tr><th width="20%">Author</th><th width="30%">Title</th><th width="5%">Year</th><th width="30%">Journal/Proceedings</th><th width="10%">Reftype</th><th width="5%">DOI/URL</th></tr></thead>
+<tbody><tr id="burden-2013-mrn-arxiv" class="entry">
+	<td>Burden, S.A., Revzen, S. and Sastry, S.S.</td>
+	<td>Model reduction near periodic orbits of hybrid dynamical systems <p class="infolinks">[<a href="javascript:toggleInfo('burden-2013-mrn-arxiv','bibtex')">BibTeX</a>]</p></td>
+	<td>2013</td>
+	<td>arXiv preprint&nbsp;</td>
+	<td>article</td>
+	<td><a href="http://arxiv.org/abs/1308.4158">URL</a>&nbsp;</td>
+</tr>
+<tr id="bib_burden-2013-mrn-arxiv" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@article{burden-2013-mrn-arxiv,
+  author = {Burden, S A and Revzen, S and Sastry, S S},
+  title = {Model reduction near periodic orbits of hybrid dynamical systems},
+  journal = {arXiv preprint},
+  year = {2013},
+  url = {http://arxiv.org/abs/1308.4158}
+}
+</pre></td>
+</tr>
+<tr id="burden-2016-event" class="entry">
+	<td>Burden, S.A., Sastry, S.S., Koditschek, D.E. and Revzen, S.</td>
+	<td>Event-selected vector field discontinuities yield piecewise-differentiable flows <p class="infolinks">[<a href="javascript:toggleInfo('burden-2016-event','bibtex')">BibTeX</a>]</p></td>
+	<td>2016</td>
+	<td>SIAM J App Dyn Sys, pp. IN PRINT&nbsp;</td>
+	<td>article</td>
+	<td>&nbsp;</td>
+</tr>
+<tr id="bib_burden-2016-event" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@article{burden-2016-event,
+  author = {Burden, S A and Sastry, S S and Koditschek, D E and Revzen, S},
+  title = {Event-selected vector field discontinuities yield piecewise-differentiable flows},
+  journal = {SIAM J App Dyn Sys},
+  year = {2016},
+  pages = {IN PRINT}
+}
+</pre></td>
+</tr>
+<tr id="burden-2014-event" class="entry">
+	<td>Burden, S.A., Sastry, S.S., Koditschek, D.E. and Revzen, S.</td>
+	<td>Event-selected vector field discontinuities yield piecewise-differentiable flows <p class="infolinks">[<a href="javascript:toggleInfo('burden-2014-event','bibtex')">BibTeX</a>]</p></td>
+	<td>2014</td>
+	<td>arXiv preprint&nbsp;</td>
+	<td>article</td>
+	<td><a href="http://arxiv.org/abs/1407.1775">URL</a>&nbsp;</td>
+</tr>
+<tr id="bib_burden-2014-event" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@article{burden-2014-event,
+  author = {Burden, Samuel A and Sastry, S Shankar and Koditschek, Daniel E and Revzen, Shai},
+  title = {Event-selected vector field discontinuities yield piecewise-differentiable flows},
+  journal = {arXiv preprint},
+  year = {2014},
+  url = {http://arxiv.org/abs/1407.1775}
+}
+</pre></td>
+</tr>
+<tr id="burden-2011-drn" class="entry">
+	<td>Burden, S., Revzen, S. and Sastry, S.S.</td>
+	<td>Dimension reduction near periodic orbits of hybrid systems <p class="infolinks">[<a href="javascript:toggleInfo('burden-2011-drn','abstract')">Abstract</a>] [<a href="javascript:toggleInfo('burden-2011-drn','bibtex')">BibTeX</a>]</p></td>
+	<td>2011</td>
+	<td>IEEE Conference on Decision and Control and European Control Conference (CDC-ECC), pp. 6116 - 6121&nbsp;</td>
+	<td>article</td>
+	<td><a href="http://dx.doi.org/10.1109/CDC.2011.6160405">DOI</a> <a href="http://arxiv.org/abs/1109.1780">URL</a>&nbsp;</td>
+</tr>
+<tr id="abs_burden-2011-drn" class="abstract noshow">
+	<td colspan="6"><b>Abstract</b>: When the Poincare map associated with a periodic orbit of a hybrid dynamical system has constant-rank iterates, there exists a constant-dimensional invariant subsystem near the orbit which attracts all nearby trajectories in finite time. This result shows that the long-term behavior of a hybrid model with a large number of degrees-of-freedom may be governed by a low-dimensional smooth dynamical system. The appearance of such simplified models enables the translation of analytical tools from smooth systems to the hybrid setting and provides a bridge between the efforts of biologists and engineers studying legged locomotion.</td>
+</tr>
+<tr id="bib_burden-2011-drn" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@article{burden-2011-drn,
+  author = {S Burden and S Revzen and S S Sastry},
+  title = {Dimension reduction near periodic orbits of hybrid systems},
+  journal = {IEEE Conference on Decision and Control and European Control Conference (CDC-ECC)},
+  year = {2011},
+  pages = {6116 -- 6121},
+  url = {http://arxiv.org/abs/1109.1780},
+  doi = {http://dx.doi.org/10.1109/CDC.2011.6160405}
+}
+</pre></td>
+</tr>
+<tr id="Patent-Comp" class="entry">
+	<td>Frachtenberg, E. and Revzen, S.</td>
+	<td>Lossless data compression <p class="infolinks">[<a href="javascript:toggleInfo('Patent-Comp','abstract')">Abstract</a>] [<a href="javascript:toggleInfo('Patent-Comp','bibtex')">BibTeX</a>]</p></td>
+	<td>2003</td>
+	<td>United States Patent Applicationasssignee: Harmonic Data Systems Ltd.&nbsp;</td>
+	<td>misc</td>
+	<td><a href="http://www.freepatentsonline.com/20030030575.html">URL</a>&nbsp;</td>
+</tr>
+<tr id="abs_Patent-Comp" class="abstract noshow">
+	<td colspan="6"><b>Abstract</b>: Dictionary based data compression apparatus comprising: a library of static dictionaries each optimized for a different data type, a data type determiner operable to scan incoming data and determine a data type thereof, a selector for selecting a static dictionary corresponding to said determined data type and a compressor for compressing said incoming data using said selected dictionary. The apparatus is useful in providing efficient compression of relatively short data packets having undefined contents as may be expected in a network switch.</td>
+</tr>
+<tr id="bib_Patent-Comp" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@misc{Patent-Comp,
+  author = {E Frachtenberg and S Revzen},
+  title = {Lossless data compression},
+  journal = {United States Patent Application},
+  year = {2003},
+  note = {20030030575},
+  url = {http://www.freepatentsonline.com/20030030575.html}
+}
+</pre></td>
+</tr>
+<tr id="jusufi-2008-PNAS" class="entry">
+	<td>Jusufi, A., Goldman, D.I., Revzen, S. and Full, R.J.</td>
+	<td>Active tails enhance arboreal acrobatics in geckos <p class="infolinks">[<a href="javascript:toggleInfo('jusufi-2008-PNAS','abstract')">Abstract</a>] [<a href="javascript:toggleInfo('jusufi-2008-PNAS','bibtex')">BibTeX</a>]</p></td>
+	<td>2008</td>
+	<td>PNAS<br/>Vol. 105(11), pp. 4215-4219&nbsp;</td>
+	<td>article</td>
+	<td><a href="http://dx.doi.org/10.1073/pnas.0711944105">DOI</a> &nbsp;</td>
+</tr>
+<tr id="abs_jusufi-2008-PNAS" class="abstract noshow">
+	<td colspan="6"><b>Abstract</b>: Geckos are nature's elite climbers. Their remarkable climbing feats have been attributed to specialized feet with hairy toes that uncurl and peel in milliseconds. Here, we report that the secret to the gecko's arboreal acrobatics includes an active tail. We examine the tail's role during rapid climbing, aerial descent, and gliding. We show that a gecko's tail functions as an emergency fifth leg to prevent falling during rapid climbing. A response initiated by slipping causes the tail tip to push against the vertical surface, thereby preventing pitch-back of the head and upper body. When pitch-back cannot be prevented, geckos avoid falling by placing their tail in a posture similar to a bicycle's kickstand. Should a gecko fall with its back to the ground, a swing of its tail induces the most rapid, zero-angular momentum air-righting response yet measured. Once righted to a sprawled gliding posture, circular tail movements control yaw and pitch as the gecko descends. Our results suggest that large, active tails can function as effective control appendages. These results have provided biological inspiration for the design of an active tail on a climbing robot, and we anticipate their use in small, unmanned gliding vehicles and multisegment spacecraft.</td>
+</tr>
+<tr id="bib_jusufi-2008-PNAS" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@article{jusufi-2008-PNAS,
+  author = {Jusufi, A and Goldman, D I and Revzen, S and Full, R J},
+  title = {Active tails enhance arboreal acrobatics in geckos},
+  journal = {PNAS},
+  year = {2008},
+  volume = {105},
+  number = {11},
+  pages = {4215-4219},
+  doi = {http://dx.doi.org/10.1073/pnas.0711944105}
+}
+</pre></td>
+</tr>
+<tr id="kaspari-2015-thermal" class="entry">
+	<td>Kaspari, M., Clay, N.A., Lucas, J.A., Revzen, S., Kay, A.D. and Yanoviak, S.P.</td>
+	<td>Thermal adaptation and phosphorus shape thermal performance in an assemblage of rainforest ants <p class="infolinks">[<a href="javascript:toggleInfo('kaspari-2015-thermal','bibtex')">BibTeX</a>]</p></td>
+	<td>2015</td>
+	<td>Ecology&nbsp;</td>
+	<td>article</td>
+	<td><a href="http://dx.doi.org/10.1890/15-1225.1">DOI</a> &nbsp;</td>
+</tr>
+<tr id="bib_kaspari-2015-thermal" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@article{kaspari-2015-thermal,
+  author = {Kaspari, Michael and Clay, Natalie A and Lucas, Jane A and Revzen, Shai and Kay, Adam D and Yanoviak, Stephen P},
+  title = {Thermal adaptation and phosphorus shape thermal performance in an assemblage of rainforest ants},
+  journal = {Ecology},
+  publisher = {Eco Soc America},
+  year = {2015},
+  doi = {http://dx.doi.org/10.1890/15-1225.1}
+}
+</pre></td>
+</tr>
+<tr id="maus-2015-constructing" class="entry">
+	<td>Maus, H.-M., Revzen, S., Guckenheimer, J.M., Ludwig, C., Reger, J. and Seyfarth, A.</td>
+	<td>Constructing predictive models of human running <p class="infolinks">[<a href="javascript:toggleInfo('maus-2015-constructing','bibtex')">BibTeX</a>]</p></td>
+	<td>2015</td>
+	<td>J R Soc Lond Interface<br/>Vol. 12(103), pp. 20140899&nbsp;</td>
+	<td>article</td>
+	<td><a href="http://dx.doi.org/10.1098/rsif.2014.0899">DOI</a> &nbsp;</td>
+</tr>
+<tr id="bib_maus-2015-constructing" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@article{maus-2015-constructing,
+  author = {Maus, H-M and Revzen, S and Guckenheimer, J M and Ludwig, C and Reger, J and Seyfarth, A},
+  title = {Constructing predictive models of human running},
+  journal = {J R Soc Lond Interface},
+  publisher = {The Royal Society},
+  year = {2015},
+  volume = {12},
+  number = {103},
+  pages = {20140899},
+  doi = {http://dx.doi.org/10.1098/rsif.2014.0899}
+}
+</pre></td>
+</tr>
+<tr id="revzen-2009-PhD" class="entry">
+	<td>Revzen, S.</td>
+	<td>Neuromechanical Control Architectures in Arthropod Locomotion <p class="infolinks">[<a href="javascript:toggleInfo('revzen-2009-PhD','bibtex')">BibTeX</a>]</p></td>
+	<td>2009</td>
+	<td><i>School</i>: Univeristy of California, Berkeley&nbsp;</td>
+	<td>phdthesis</td>
+	<td><a href="http://shrevzen.nfshost.com/docs/REVZEN-2009-PhD.pdf">URL</a>&nbsp;</td>
+</tr>
+<tr id="bib_revzen-2009-PhD" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@phdthesis{revzen-2009-PhD,
+  author = {S Revzen},
+  title = {Neuromechanical Control Architectures in Arthropod Locomotion},
+  school = {Univeristy of California, Berkeley},
+  year = {2009},
+  note = {Department of Integrative Biology},
+  url = {http://shrevzen.nfshost.com/docs/REVZEN-2009-PhD.pdf}
+}
+</pre></td>
+</tr>
+<tr id="revzen-2001-MSc" class="entry">
+	<td>Revzen, S.</td>
+	<td>Paging on Access Graphs of Minimal Degree 3 <p class="infolinks">[<a href="javascript:toggleInfo('revzen-2001-MSc','abstract')">Abstract</a>] [<a href="javascript:toggleInfo('revzen-2001-MSc','bibtex')">BibTeX</a>]</p></td>
+	<td>2001</td>
+	<td><i>School</i>: Hebrew University, Jerusalem&nbsp;</td>
+	<td>mastersthesis</td>
+	<td>&nbsp;</td>
+</tr>
+<tr id="abs_revzen-2001-MSc" class="abstract noshow">
+	<td colspan="6"><b>Abstract</b>: This paper presents two related results in the field of Paging Algorithms and in graph theory. It begins in presenting a generalization of the Access Graph model of paging, dubbed Abstract Access Graphs. This model is applicable to online problems in general, and its study motivated my research. Then it is shown that on access graphs (in the usual sense) with a minimal vertex degree of 3 or more the competitive ratio is at least k/4 for all deterministic algorithms and H_k/4 for randomized algoorithms. This is derived from a graph theoretical result showing that such trees contain many leaves. In attempting to extend this result to abstract access graphs it is found that such trees (arboresences) do not exist in some directed graphs, even with arbitrarily high minimal in- and out- degree. Such an example is constructed, thereby disproving the existence of linearly small strongly connected directed dominating sets in such graphs. </td>
+</tr>
+<tr id="bib_revzen-2001-MSc" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@mastersthesis{revzen-2001-MSc,
+  author = {S Revzen},
+  title = {Paging on Access Graphs of Minimal Degree 3},
+  school = {Hebrew University, Jerusalem},
+  year = {2001},
+  note = {unpublished}
+}
+</pre></td>
+</tr>
+<tr id="revzen-2013-ikp" class="entry">
+	<td>Revzen, S., Burden, S.A., Moore, T.Y., Mongeau, J.-M. and Full, R.J.</td>
+	<td>Instantaneous kinematic phase reflects neuromechanical response to lateral perturbations of running cockroaches <p class="infolinks">[<a href="javascript:toggleInfo('revzen-2013-ikp','abstract')">Abstract</a>] [<a href="javascript:toggleInfo('revzen-2013-ikp','bibtex')">BibTeX</a>]</p></td>
+	<td>2013</td>
+	<td>Biol Cybern<br/>Vol. 107(2), pp. 179-200&nbsp;</td>
+	<td>article</td>
+	<td><a href="http://dx.doi.org/10.1007/s00422-012-0545-z">DOI</a> &nbsp;</td>
+</tr>
+<tr id="abs_revzen-2013-ikp" class="abstract noshow">
+	<td colspan="6"><b>Abstract</b>: Instantaneous kinematic phase calculation allows the development of reduced-order oscillator models useful in generating hypotheses of neuromechanical control. When perturbed, changes in instantaneous kinematic phase and frequency of rhythmic movements can provide details of movement and evidence for neural feedback to a system-level neural oscillator with a time resolution not possible with traditional approaches. We elicited an escape response in cockroaches (Blaberus discoidalis) that ran onto a movable cart accelerated laterally with respect to the animals’ motion causing a perturbation. The specific impulse imposed on animals (0.50+/-0.04 m/s; mean, SD) was nearly twice their forward speed (0.25+/- 0.06 m/s) . Instantaneous residual phase computed from kinematic phase remained constant for 110 ms after the onset of perturbation, but then decreased representing a decrease in stride frequency. Results from direct muscle action potential recordings supported kinematic phase results in showing that recovery begins with self-stabilizing mechanical feedback followed by neural feedback to an abstracted neural oscillator or central pattern generator. Trials fell into two classes of forward velocity changes, while exhibiting statistically indistinguishable frequency changes. Animals pulled away from the side with front and hind legs of the tripod in stance recovered heading within 300 ms, whereas animals that only had a middle leg of the tripod resisting the pull did not recover within this period. Animals with eight or more legs might be more robust to lateral perturbations than hexapods.</td>
+</tr>
+<tr id="bib_revzen-2013-ikp" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@article{revzen-2013-ikp,
+  author = {Revzen, S and Burden, S A and Moore, T Y and Mongeau, J-M and Full, R J},
+  title = {Instantaneous kinematic phase reflects neuromechanical response to lateral perturbations of running cockroaches},
+  journal = {Biol Cybern},
+  publisher = {Springer-Verlag},
+  year = {2013},
+  volume = {107},
+  number = {2},
+  pages = {179-200},
+  doi = {http://dx.doi.org/10.1007/s00422-012-0545-z}
+}
+</pre></td>
+</tr>
+<tr id="revzen-2010-fdsd" class="entry">
+	<td>Revzen, S. and Guckenheimer, J.M.</td>
+	<td>Finding the dimension of slow dynamics in a rhythmic system <p class="infolinks">[<a href="javascript:toggleInfo('revzen-2010-fdsd','bibtex')">BibTeX</a>]</p></td>
+	<td>2012</td>
+	<td>J R Soc Lond Interface<br/>Vol. 9(70), pp. 957-971&nbsp;</td>
+	<td>article</td>
+	<td><a href="http://dx.doi.org/10.1098/rsif.2011.0431">DOI</a> &nbsp;</td>
+</tr>
+<tr id="bib_revzen-2010-fdsd" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@article{revzen-2010-fdsd,
+  author = {Revzen, S and Guckenheimer, J M},
+  title = {Finding the dimension of slow dynamics in a rhythmic system},
+  journal = {J R Soc Lond Interface},
+  year = {2012},
+  volume = {9},
+  number = {70},
+  pages = {957-971},
+  doi = {http://dx.doi.org/10.1098/rsif.2011.0431}
+}
+</pre></td>
+</tr>
+<tr id="revzen-2008-phaser" class="entry">
+	<td>Revzen, S. and Guckenheimer, J.M.</td>
+	<td>Estimating the phase of synchronized oscillators <p class="infolinks">[<a href="javascript:toggleInfo('revzen-2008-phaser','abstract')">Abstract</a>] [<a href="javascript:toggleInfo('revzen-2008-phaser','bibtex')">BibTeX</a>]</p></td>
+	<td>2008</td>
+	<td>Phys Rev E<br/>Vol. 78(5), pp. 051907&nbsp;</td>
+	<td>article</td>
+	<td><a href="http://dx.doi.org/10.1103/PhysRevE.78.051907">DOI</a> &nbsp;</td>
+</tr>
+<tr id="abs_revzen-2008-phaser" class="abstract noshow">
+	<td colspan="6"><b>Abstract</b>:  The state of a collection of phase-locked oscillators is determined by a single phase variable or cyclic coordinate. This paper presents a computational method, Phaser, for estimating the phase of phase-locked oscillators from limited amounts of multivariate data in the presence of noise and measurement errors. Measurements are assumed to be a collection of multidimensional time series. Each series consists of several cycles of the same or similar systems. The oscillators within each system are not assumed to be identical. Using measurements of the noise covariance for the multivariate input, data from the individual oscillators in the system are combined to reduce the variance of phase estimates for the whole system. The efficacy of the algorithm is demonstrated on experimental and model data from biomechanics of cockroach running and on simulated oscillators with varying levels of noise. </td>
+</tr>
+<tr id="bib_revzen-2008-phaser" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@article{revzen-2008-phaser,
+  author = {S Revzen and J M Guckenheimer},
+  title = {Estimating the phase of synchronized oscillators},
+  journal = {Phys Rev E},
+  year = {2008},
+  volume = {78},
+  number = {5},
+  pages = {051907},
+  doi = {http://dx.doi.org/10.1103/PhysRevE.78.051907}
+}
+</pre></td>
+</tr>
+<tr id="revzen-2007-TestArch" class="entry">
+	<td>Revzen, S., Koditschek, D.E. and Full, R.J.</td>
+	<td>Progress in motor control - a multidisciplinary perspective <p class="infolinks">[<a href="javascript:toggleInfo('revzen-2007-TestArch','abstract')">Abstract</a>] [<a href="javascript:toggleInfo('revzen-2007-TestArch','bibtex')">BibTeX</a>]</p></td>
+	<td>2008</td>
+	<td>, pp. 25-56&nbsp;</td>
+	<td>inbook</td>
+	<td><a href="http://dx.doi.org/10.1007/978-0-387-77064-2\%5F3">DOI</a> &nbsp;</td>
+</tr>
+<tr id="abs_revzen-2007-TestArch" class="abstract noshow">
+	<td colspan="6"><b>Abstract</b>: Our objective is to provide experimentalists with neuromechanical control hypotheses that can be tested with kinematic data sets. To illustrate the approach, we select legged animals responding to perturbations during running. In the following sections, we briefly outline our dynamical systems approach, state our over-arching hypotheses, define four neuromechanical control architectures (NCAs) and conclude by proposing a series of perturbation experiments that can begin to identify the simplest architecture that best represents an animal?s controller.</td>
+</tr>
+<tr id="bib_revzen-2007-TestArch" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@inbook{revzen-2007-TestArch,
+  author = {S Revzen and D E Koditschek and R J Full},
+  title = {Progress in motor control - a multidisciplinary perspective},
+  publisher = {Springer Science+Business Media, LLC - NY},
+  year = {2008},
+  pages = {25-56},
+  doi = {http://dx.doi.org/10.1007/978-0-387-77064-2\%5F3}
+}
+</pre></td>
+</tr>
+<tr id="revzen-2015-spie" class="entry">
+	<td>Revzen, S. and Kvalheim, M.</td>
+	<td>Data driven models of legged locomotion <p class="infolinks">[<a href="javascript:toggleInfo('revzen-2015-spie','abstract')">Abstract</a>] [<a href="javascript:toggleInfo('revzen-2015-spie','bibtex')">BibTeX</a>]</p></td>
+	<td>2015</td>
+	<td>Proc SPIE<br/>Vol. 9467, pp. 94671V-94671V-8&nbsp;</td>
+	<td>inproceedings</td>
+	<td><a href="http://dx.doi.org/10.1117/12.2178007">DOI</a> &nbsp;</td>
+</tr>
+<tr id="abs_revzen-2015-spie" class="abstract noshow">
+	<td colspan="6"><b>Abstract</b>: Legged locomotion is a challenging regime both for experimental analysis and for robot design. From biology, we know that legged animals can perform spectacular feats which our machines can only surpass on some specially controlled surfaces such as roads. We present a concise review of the theoretical underpinnings of Data Driven Floquet Analysis (DDFA), an approach for empirical modeling of rhythmic dynamical systems. We provide a review of recent and classical results which justify its use in the analysis of legged systems.</td>
+</tr>
+<tr id="bib_revzen-2015-spie" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@inproceedings{revzen-2015-spie,
+  author = {Revzen, S and Kvalheim, M},
+  title = {Data driven models of legged locomotion},
+  journal = {Proc SPIE},
+  year = {2015},
+  volume = {9467},
+  pages = {94671V-94671V-8},
+  doi = {http://dx.doi.org/10.1117/12.2178007}
+}
+</pre></td>
+</tr>
+<tr id="Patent-ECG" class="entry">
+	<td>Shani, B., Revzen, S. and Frimerman, A.</td>
+	<td>Analysis of Electrocardiogram Signals <p class="infolinks">[<a href="javascript:toggleInfo('Patent-ECG','abstract')">Abstract</a>] [<a href="javascript:toggleInfo('Patent-ECG','bibtex')">BibTeX</a>]</p></td>
+	<td>2006</td>
+	<td>United States Patent assignee: Bio Signal Analysis, LTD &nbsp;</td>
+	<td>misc</td>
+	<td><a href="http://www.freepatentsonline.com/WO2006123334.html">URL</a>&nbsp;</td>
+</tr>
+<tr id="abs_Patent-ECG" class="abstract noshow">
+	<td colspan="6"><b>Abstract</b>: Apparatus for graphical representation of a train of ECG complexes, said ECG complexes comprising an R wave and a T-P interval and having variable isoelectric levels, the apparatus comprising: an isoelectric alignment unit for aligning the complexes in terms of isoelectric level by aligning respective T-P intervals, thereby to provide a graphical representation of said train of ECG complexes; and a temporal alignment unit for aligning said complexes temporally using a predetermined point of respective R waves. The aligned units are superimposed to provide a distribution of a normalized ECG signal over a series of pulses or heartbeats.</td>
+</tr>
+<tr id="bib_Patent-ECG" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@misc{Patent-ECG,
+  author = {B Shani and S Revzen and A Frimerman},
+  title = {Analysis of Electrocardiogram Signals},
+  journal = {United States Patent},
+  year = {2006},
+  note = {WO/2006/123334},
+  url = {http://www.freepatentsonline.com/WO2006123334.html}
+}
+</pre></td>
+</tr>
+<tr id="spence-2009-JEB" class="entry">
+	<td>Spence, A.J., Revzen, S., Seipel, J., Mullens, C. and Full, R.J.</td>
+	<td>Insects running on elastic surfaces <p class="infolinks">[<a href="javascript:toggleInfo('spence-2009-JEB','abstract')">Abstract</a>] [<a href="javascript:toggleInfo('spence-2009-JEB','bibtex')">BibTeX</a>]</p></td>
+	<td>2010</td>
+	<td>J Exp Biol<br/>Vol. 213(11), pp. 1907&nbsp;</td>
+	<td>article</td>
+	<td><a href="http://dx.doi.org/10.1242/jeb.042515">DOI</a> &nbsp;</td>
+</tr>
+<tr id="abs_spence-2009-JEB" class="abstract noshow">
+	<td colspan="6"><b>Abstract</b>: In nature, cockroaches run rapidly over complex terrain such as leaf litter. These substrates are rarely rigid, and are frequently very compliant. Whether and how compliant surfaces change the dynamics of rapid insect locomotion has not been investigated to date; largely due to experimental limitations. Here we test the hypothesis that a running insect can maintain average forward speed over an extremely soft elastic surface (10 N/m) equal to 2/3 of its virtual leg stiffness (15 N/m). Cockroaches Blaberus discoidalis running from a rigid surface onto an elastic surface were able to maintain forward speed (39.6 0.7 cm/s, rigid substrate, versus 43.3 1.1 cm/s, elastic substrate; p = 0.0064). Step frequency was unchanged (25.5 0.3 steps/sec, rigid surface, versus 26.1 0.5 steps/sec, elastic surface; p = 0.28). To uncover the mechanism we measured the animal's COM dynamics using a novel miniature backpack, consisting chiefly of a 3-axis MEMs accelerometer attached very near the COM. Vertical acceleration of the COM on the elastic surface had smaller peak-to-peak amplitudes (13.95 0.41 m/s2, rigid, vs. 10.07 0.50 m/s2 on the elastic surface; p < 0.0001). The observed change in COM acceleration over an elastic surface requires no change in effective stiffness when duty factor and ground stiffness are taken into account. Due to the lowering of the COM towards the elastic surface the swing leg lands earlier and increases the period of double support. A simple feedforward control model explains the experimental result and provides one plausible model mechanism. We find no evidence for active neural control of effective leg stiffness.</td>
+</tr>
+<tr id="bib_spence-2009-JEB" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@article{spence-2009-JEB,
+  author = {A J Spence and S Revzen and J Seipel and C Mullens and R J Full},
+  title = {Insects running on elastic surfaces},
+  journal = {J Exp Biol},
+  year = {2010},
+  volume = {213},
+  number = {11},
+  pages = {1907},
+  doi = {http://dx.doi.org/10.1242/jeb.042515}
+}
+</pre></td>
+</tr>
+<tr id="sundaram-2011-lis" class="entry">
+	<td>Sundaram, S., Revzen, S. and Pappas, G.</td>
+	<td>Linear iterative strategies to identify and overcome malicious links in wireless networks <p class="infolinks">[<a href="javascript:toggleInfo('sundaram-2011-lis','abstract')">Abstract</a>] [<a href="javascript:toggleInfo('sundaram-2011-lis','bibtex')">BibTeX</a>]</p></td>
+	<td>2012</td>
+	<td>Automatica<br/>Vol. 48(11), pp. 2894-2901&nbsp;</td>
+	<td>article</td>
+	<td><a href="http://dx.doi.org/10.1016/j.automatica.2012.06.072">DOI</a> &nbsp;</td>
+</tr>
+<tr id="abs_sundaram-2011-lis" class="abstract noshow">
+	<td colspan="6"><b>Abstract</b>: We consider a network where every node has a value that we wish to disseminate to all other nodes. A certain number of communication links between nodes are allowed to be under the control of an attacker who maliciously chooses the messages carried by these links. We study linear iterative strategies that disseminate information despite such attacks. In such strategies, at each time-step each node in the network broadcasts a value to its neighbors that is a linear combination of its previous value and the values received from its neighbors. As long the number of incoming links to any node and the total number of other nodes with incoming malicious links is no greater than f , we show that linear strategies are almost always resilient to malicious behavior provided that vertex-connectivity of the network is at least 2f + 1. Furthermore, we show that each node can identify the exact set of malicious links that directly enter that node, and can communicate this information to the other nodes via the linear strategy.</td>
+</tr>
+<tr id="bib_sundaram-2011-lis" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@article{sundaram-2011-lis,
+  author = {S Sundaram and S Revzen and G Pappas},
+  title = {Linear iterative strategies to identify and overcome malicious links in wireless networks},
+  journal = {Automatica},
+  year = {2012},
+  volume = {48},
+  number = {11},
+  pages = {2894-2901},
+  doi = {http://dx.doi.org/10.1016/j.automatica.2012.06.072}
+}
+</pre></td>
+</tr>
+<tr id="white-2010-stiffness" class="entry">
+	<td>White, P.J., Revzen, S., Thorne, C.E. and Yim, M.</td>
+	<td>A general stiffness model for programmable matter and modular robotic structures <p class="infolinks">[<a href="javascript:toggleInfo('white-2010-stiffness','abstract')">Abstract</a>] [<a href="javascript:toggleInfo('white-2010-stiffness','bibtex')">BibTeX</a>]</p></td>
+	<td>2011</td>
+	<td>Robotica<br/>Vol. 29(01), pp. 103-121&nbsp;</td>
+	<td>article</td>
+	<td><a href="http://dx.doi.org/10.1017/S0263574710000743">DOI</a> &nbsp;</td>
+</tr>
+<tr id="abs_white-2010-stiffness" class="abstract noshow">
+	<td colspan="6"><b>Abstract</b>: The fields of modular reconfigurable robotics and programmable matter study how to compose functionally useful systems from configurations of modules. In addition to the external shape of a module configuration, the internal arrangement of modules and bonds between them can greatly impact functionally relevant mechanical properties such as load bearing ability. A fast method to evaluate the mechanical property aids the search for an arrangement of modules achieving a desired mechanical property as the space of possible configurations grows combinatorially. We present a fast approximate method where the bonds between modules are represented with stiffness matrices that are general enough to represent a wide variety of systems and follows the natural modular decomposition of the system. The method includes nonlinear modeling such as anisotropic bonds and properties that vary as components flex. We show that the arrangement of two types of bonds within a programmable matter systems enables programming the apparent elasticity of the structure. We also present a method to experimentally determine the stiffness matrix for chain style reconfigurable robots. The efficacy of applying the method is demonstrated on the CKBot modular robot and two programmable matter systems: the Rubik's snake folding chain toy and a right angle tetrahedron chain called RATChET7mm. By allowing the design space to be rapidly explored we open the door to optimizing modular structures for desired mechanical properties such as enhanced load bearing and robustness.</td>
+</tr>
+<tr id="bib_white-2010-stiffness" class="bibtex noshow">
+<td colspan="6"><b>BibTeX</b>:
+<pre>
+@article{white-2010-stiffness,
+  author = {P J White and S Revzen and C E Thorne and M Yim},
+  title = {A general stiffness model for programmable matter and modular robotic structures},
+  journal = {Robotica},
+  publisher = {Cambridge Univ Press},
+  year = {2011},
+  volume = {29},
+  number = {01},
+  pages = {103--121},
+  doi = {http://dx.doi.org/10.1017/S0263574710000743}
+}
+</pre></td>
+</tr>
+</tbody>
+</table>
+<footer>
+ <small>Created by <a href="http://jabref.sourceforge.net">JabRef</a> on 14/06/2016.</small>
+</footer>
+<!-- file generated by JabRef -->
+</body>
+</html>

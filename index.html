@@ -1,0 +1,138 @@
+---
+layout: default
+section_id: home
+slides:
+  - bg: images/overused.jpg
+    title:
+      text: Welcome to the Biologically Inspired Robotics Lab! 
+      animation: bottom-to-top
+      class: large-8 medium-11
+  - bg: images/lettershrb.jpg
+    title:
+      text: 'EECS 498: Hands-on Robotics'
+      animation: bottom-to-top
+      class: large-7 large-offset-5 medium-9 medium-offset-3
+---
+<script src="javascripts/konami.js"></script>
+<div class='advanced mod modDefaultSlider'>
+  <div class='sequence' data-autostop='on' data-timeout='0'>
+    <a class='sequence-prev' href='javascript:void(0);'>
+      <span></span>
+    </a>
+    <a class='sequence-next' href='javascript:void(0);'>
+      <span></span>
+    </a>
+    <ul class='sequence-pagination'>
+      {% for slide in page.slides %}
+        {% if forloop.index == 1 %}
+          <li class='current'></li>
+        {% else %}
+          <li></li>
+        {% endif %}
+      {% endfor %}
+    </ul>
+    <ul class='sequence-canvas'>
+      {% for slide in page.slides %}
+        {% if forloop.index == 1 %}
+          {% assign class = "static" %}
+        {% else %}
+          {% assign class = '' %}
+        {% endif %}
+
+        <li class='frame {{class}}'>
+          <div class='bg' style='background-image: url({{slide.bg}});'></div>
+          {% if slide.infos %}
+            {% for info in slide.infos %}
+              <div class='info{{forloop.index}} {{info.animation}}' style=''>
+                <div class='row'>
+                  <div class='medium-10 large-8 columns'>
+                    <p class='fa fa-check' style='color: #333;'>{{info.text}}</p>
+                    <div class='spacing'></div>
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+          {% else %}
+            <div class='title {{slide.title.animation}}' style='color: rgb(255, 255, 255);'>
+              <div class='row'>
+                <div class='{{slide.title.class}} columns'>
+                  <h2>{{slide.title.text}}</h2>
+                </div>
+              </div>
+            </div>
+          {% endif %}
+          <div class='buttons-wrapper {{slide.buttons.animation}}' style=''>
+            <div class='row'>
+              <div class='{{slide.buttons.class}} columns'>
+                <div class='two spacing'></div>
+                {% for button in slide.buttons.items %}
+                  <a target="_blank" class='button {{button.class}}' href='{{button.url}}'>{{button.text}}</a>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+
+
+<div class='full'>
+  <div class='row'>
+    <div class='large-6 columns'>
+      <h4>Welcome </h4>
+	  <HR SIZE="6">
+      <div class='spacing'></div>
+      <p>Professor Revzen and his team at the Biologically Inspired Robotics and 
+		Dynamical Systems (BIRDS) Lab are working on discovering, modeling, and reproducing
+		the strategies animals use when interacting with physical objects.
+         This work consists of collaboration with biomechanists to analyze experimental data,
+         developing new mathematical tools for modeling and estimation of model parameters,
+         and construction of robots which employ the new principles.
+      </p>
+		<br>
+    </div>
+	<div class='large-5 columns'>
+		<div class='two-spacing'></div>
+		<iframe width="444" height="250" src="https://www.youtube.com/embed/JUqmJ-_fBZg?rel=0" frameborder="0" allowfullscreen></iframe>	
+	</div>
+    </div>
+	<div class='two spacing'></div>
+	<div class='row'>
+		<div class='large-5 columns'>
+		<h4>Suggested Reading </h4>
+		<HR SIZE="6">
+		<div class='links'>
+			  <ul>
+				{% for post in site.categories.booklist %}
+				  {% if forloop.index > 6 %}
+					{% break %}
+				  {% endif %}
+					<h5><a href="{{post.url}}" style= "color:#005580">{{post.title}}</a></h5>
+					<p>{{post.excerpt | strip_html | truncate:160}}</p>
+				{% endfor %}
+			  </ul>
+			</div>
+		</div>
+	<div class='large-6 columns'>
+			<h4>Recent News </h4>
+			<HR SIZE="6">
+			<div class='links'>
+			  <ul>
+				{% for post in site.categories.news %}
+				  {% if forloop.index > 6 %}
+					{% break %}
+				  {% endif %}
+				  <h5><a href="{{post.url}}" style= "color:#005580">{{post.title}}</a></h5>
+				  <p>{{post.excerpt | strip_html | truncate:160}}</p>
+	<!-- 			  <a class="th" href="{{site.url}}/{{post.image}}">
+					<img src="{{site.url}}/{{post.image}}">
+				  </a> -->
+				{% endfor %}
+			  </ul>
+			</div>
+		</div>
+  </div>
+  
+</div>

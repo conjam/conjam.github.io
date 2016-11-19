@@ -1,0 +1,13 @@
+{% capture thecycle %}{% cycle 'odd', 'even' %}{% endcapture %}
+{% if thecycle == 'odd' %}
+	<tr>
+		<td>
+			{% include shortinfo.html %}
+		</td>
+{% endif %}
+{% if thecycle == 'even' %}
+		<td>
+			{% include shortinfo.html %}
+		</td>
+	</tr>
+{% endif %}

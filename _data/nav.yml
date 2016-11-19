@@ -1,0 +1,46 @@
+- name: About
+  path: /index.html
+  section_id: about
+- name: Research 
+  path: /research/
+  section_id: research 
+- name: People
+  path: /people/
+  section_id: people
+  children:
+    - name: Shai Revzen
+      path: /people/
+    - name: Current Members
+      path: /people/gruntwork.html
+    - name: Lab Alumni
+      path: /people/alumni.html
+- name: Media
+  children:
+    - name: YouTube Channel
+      path: https://www.youtube.com/channel/UCfiCiRxbf5X15Jv7y4C-cKA
+    - name: Blog
+      path: /blog/
+    - name: Talks 
+      path: /media/talks.html
+    - name: Robots 
+      path: /media/media.html
+- name: Teaching 
+  path: /teaching/
+  section_id: teaching/ 
+- name: Publications
+  section_id: publications
+  children:
+    - name: General Publications
+      path: /publications/general.html
+    - name: Conferences 
+      path: /publications/conferences.html
+    - name: Code
+      path: https://github.com/BIRDSLab/
+- name: Internal
+  path: publications/
+  section_id: internal
+  children:
+    - name: Lab Wiki
+      path: https://sites.google.com/a/umich.edu/revzen-lab-wiki/home
+    - name: Calendar 
+      path: /internal/calendar.html

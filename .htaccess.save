@@ -1,0 +1,15 @@
+RewriteEngine On
+RewriteBase /
+RewriteRule ^index\.php$ - [L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule . /index.php [L# Rewrite non-www to www
+
+
+
+RewriteEngine On
+RewriteCond %{HTTP_HOST} ^birds\.eecs\.umich\.edu$ [NC]
+RewriteRule ^(.*)$ http://www.birds.eecs.umich.edu/$1 [R=301,L]
+ErrorDocument 404 "<H1>Page not found</H1>"
+DirectoryIndex index.html 
+
