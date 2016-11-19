@@ -2,7 +2,7 @@
 layout: person
 name: James Connolly
 categories : current
-level: undergraduate
+level: undergrad
 uniquename: conjam
 title: hungry
 major: Computer Engineering 

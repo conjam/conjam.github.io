@@ -2,7 +2,7 @@
 layout: person
 name: Paul Reggentin
 categories : current
-level: undergraduate
+level: undergrad
 uniquename: paulregg
 title: Student Researcher
 major: Electrical Engineering
