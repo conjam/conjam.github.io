@@ -5,15 +5,8 @@
   path: /research/
   section_id: research 
 - name: People
-  path: /people/
+  path: /people/gruntwork.html
   section_id: people
-  children:
-    - name: Shai Revzen
-      path: /people/
-    - name: Current Members
-      path: /people/gruntwork.html
-    - name: Lab Alumni
-      path: /people/alumni.html
 - name: Blog
   path: /blog/
   section_id: blog
