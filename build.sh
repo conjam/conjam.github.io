@@ -10,7 +10,6 @@ git commit -m "website updated on $TODAY"
 git push
 jekyll build
 cd _site
-rm *.sh
 git init
 git add .
 git commit -m "commit on $TODAY"
