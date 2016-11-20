@@ -7,23 +7,35 @@ section_id: research
 <div class='full'>
   <div class='row'>
     <div class='large-9 columns'>
-      <h2>Research</h2>
+      <h2>Voice Conversion</h2>
       <div class='spacing'></div>
-      <p> Research in our lab seeks to discover, describe, and utilize the core principles of control of animal movement. 
-          This research program is rooted in the belief that nature has found fundamentally different approaches for 
-          getting physical tasks done, compared to the usual methods of robotics engineers. 
-          In particular, we focus on legged locomotion of multi-legged animals, and  on producing robust and 
-          maneuverable motions from unreliable bodies in poorly characterized environments. </p>
-      <p>The research program consists of three main parts:</p>
+      <p> Our project is a voice conversion project where a spoken sentence of choice will be transformed into the same sentence with an accent. The choices of accents will be the Midwest, Southern, or British accent. Due to the scope of this project, we’ve chosen that we will take samples of speakers before our presentation rather than making a real-time analysis application. 
+
+		 </p>
+      <p>This project will be accomplished through a widespread application of DSP knowledge. A rough outline is as follows: </p>
       <ul>
-      <li> Theoretical development of mathematical ideas that could be used for modeling animal and robot locomotion. 
-           This consists of work in the fields of dynamical systems theory and control theory.
-      <li> Data-driven characterization of legged locomotion: the development of computational tools that allow 
-           mathematical descriptions of locomotion to be  quantitatively identified and produced from observational 
-           data taken from animals or machines. Work here consists of robotic science and collaboration with biologists.
-      <li> Development of inexpensive, modular, rapidly evolving robot architectures. These allow us to face the a 
-           similar design problem to that faced by Nature: getting an imprecisely manufactured body, with slow communication
-           and a modular structure, to reliably perform locomotion tasks in a poorly modeled environment.
+      <li>Accent Quantification</li>
+		    <ul>
+			<li>For each of the accents that we can map to, we collect multiple samples speaking a text which contains all of the phonemes in the English language.</li>
+			<li>We use Dynamic Time Warping to locate each phoneme in each of our voice samples.</li>
+			<li>We create a canonical MFCC coefficient for each phoneme of the accent.</li>
+			</ul>
+      <li> Calibration</li>
+	  		<ul>
+			<li>Speaker reads a text which contains all of the phonemes in the English language.</li>
+			<li>Through DTW, we can tell which phonemes are being spoken at any point in time.</li>
+			<li>We can then identify a characteristic MFCC vector for each phoneme.</li>
+			</ul>
+      <li> Map definition</li>
+	  	  	<ul>
+			<li>We define a map from each phoneme in the speaker’s voice to the corresponding voice in the chosen accent.</li>
+			</ul>
+	  <li>Transformation</li>
+			<ul>
+			<li>The speaker speaks any sentence.</li>
+			<li>Using our characteristic MFCC vectors obtained during calibration, we identify the phoneme spoken at each point in time.</li>
+			<li>Using our map, we replace the spoken phoneme with a phoneme modified to be accented.</li>
+			</ul>
       </ul>
     </div>
    
