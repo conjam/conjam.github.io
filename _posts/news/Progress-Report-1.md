@@ -10,8 +10,7 @@ images:
    - images/PR1.jpg 
 excerpt: "Click here to learn more about our progress! Wow! Much Progress! Very Advances! "
 ---
-  
-### Progress Report 1 
+
 
 [Link to Paper](http://www.sicb.org/meetings/2014/schedule/abstractdetails.php?id=776)
 

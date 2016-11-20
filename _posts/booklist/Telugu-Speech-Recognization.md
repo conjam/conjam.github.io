@@ -6,7 +6,7 @@ content_tags:  Telugu speech signals MFCC
 jour: NA
 categories : booklist 
 author: Vikram Sachdeva
-date: 2016-11-20
+date: 2016-11-21
 excerpt: "This paper uses MFCC and DSP applications to characterize varying dialects of the Telugu language."  
 ---
 
