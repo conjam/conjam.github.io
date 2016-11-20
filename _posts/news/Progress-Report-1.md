@@ -1,13 +1,16 @@
 ---
 layout : post
 title: "Progress Report 1" 
-tags :  progress report control
+tags :  progress report 
 date: 2016-11-20 
 categories : 
    - news
-author: Vikram Sachdeva
+author: James Connolly
 images:
-   - images/PR1.jpg 
+   - images/dtw.png
+   - images/PR1.jpg
+   - images/timedomain.png 
+   - images/mfcc.png   
 excerpt: "Click here to learn more about our progress! Wow! Much Progress! Very Advances! "
 ---
 
