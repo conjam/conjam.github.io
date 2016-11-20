@@ -7,8 +7,7 @@ jour: NA
 categories : booklist 
 author: Vikram Sachdeva
 date: 2016-11-20
-excerpt: 
-"This paper uses MFCC and DSP applications to characterize varying dialects of the Telugu language."  
+excerpt: "This paper uses MFCC and DSP applications to characterize varying dialects of the Telugu language."  
 ---
 
 

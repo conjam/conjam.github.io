@@ -8,8 +8,7 @@ categories :
 author: Vikram Sachdeva
 images:
    - images/PR1.jpg 
-excerpt: 
- "Click here to learn more about our progress! Wow! Much Progress! Very Advances! "
+excerpt: "Click here to learn more about our progress! Wow! Much Progress! Very Advances! "
 ---
   
 ### Progress Report 1 
