@@ -34,7 +34,7 @@ This is a plot showing the map between two speech signals. Each speaker is sayin
 
 This is a plot of the time-domain representation of a vowel. Although the signal is not perfectly periodic, it is easy to see that it has harmonic content.
 <img src="/images/mfcc.png" style="width:400px">
-<br><br>
+<br><br><br>
 
 This is a plot of many MFCC vectors calculated from one vowel. Although there are minor variations, there is a clear contour that all of the vectors follow, so they are clustered very closely together in their 13-dimensional vector space.
 
