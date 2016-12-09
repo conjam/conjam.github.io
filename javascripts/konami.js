@@ -9,7 +9,7 @@ var allowedKeys = {
 };
 
 // the 'official' Konami Code sequence
-var konamiCode = ['up', 'up', 'down', 'down', 'left', 'right', 'left', 'right', 'b', 'a'];
+var konamiCode = ['e', 'e', 'c', 's', '3', '5', '1', 'b', 'i', 't'];
 
 // a variable to remember the 'position' the user has reached so far.
 var konamiCodePosition = 0;
@@ -35,10 +35,10 @@ document.addEventListener('keydown', function(e) {
 });
 
 function activateCheats() {
-  document.body.style.backgroundImage = "url('images/people/current/Matthew_Kvalheim.jpg')";
+  document.body.style.backgroundImage = "url('images/james.jpg')";
 
   var audio = new Audio('audio/barbie.mp3');
   audio.play();
 
-  alert("As George would say, it's an autism epidemic. Perhaps from not doing George-like things in childhood like welding and getting sent to the principals office for being politcally incorrect.");
+  alert("Throughout this project, Paul and James have constantly made jokes and bits. Here's a picture of James stripping in EECS - Vikram");
 }
