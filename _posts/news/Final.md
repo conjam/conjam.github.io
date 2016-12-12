@@ -13,14 +13,14 @@ excerpt: "This is our final report."
 ---
 
 
-<h3>TOOLS USED:</h3>
+<h4>TOOLS USED:</h4>
 MFCC:
-        	Mel Frequency Cepstrum Coefficients (MFCCs) are a common way of representing spoken word signals such in DSP. The inspiration for this feature vector is taken from how the human ear processes sound. The MFCC vector of a signal segment is generated as follows:
-1. Take the Fourier Transform of a windowed signal.  
-2. Calculate the power spectrum of the Fourier Transform.
+        	Mel Frequency Cepstrum Coefficients (MFCCs) are a common way of representing spoken word signals such in DSP. The inspiration for this feature vector is taken from how the human ear processes sound. The MFCC vector of a signal segment is generated as follows:<br>
+1. Take the Fourier Transform of a windowed signal.  <br>
+2. Calculate the power spectrum of the Fourier Transform.<br>
 3. Apply a filter that takes the power spectrum and defines it with twenty six bins. Each bin describes the power of a certain range of frequencies, and there can be overlap between bins. This process is described as passing the power spectrum through a mel filter. These bins 
-apply a filter that separates the spectrum into 26 bins, 13 in the negative frequency section of the Fourier Transform and 13 in the positive section. Because the signal we transformed is real-value, the negative frequency components of the Fourier Transform are equal to the complex conjugate of the corresponding positive frequency components, so we can actually define only 13 bins. These bins are spaced exponentially, with higher frequency bins covering a larger range of frequencies. This mimics the way that the human ear processes sound. 
-4.  Take the log of each of these binned values. This approximates the way that the human ear processes loudness, which is on a logarithmic scale, like the decibel. 
+apply a filter that separates the spectrum into 26 bins, 13 in the negative frequency section of the Fourier Transform and 13 in the positive section. Because the signal we transformed is real-value, the negative frequency components of the Fourier Transform are equal to the complex conjugate of the corresponding positive frequency components, so we can actually define only 13 bins. These bins are spaced exponentially, with higher frequency bins covering a larger range of frequencies. This mimics the way that the human ear processes sound. <br>
+4.  Take the log of each of these binned values. This approximates the way that the human ear processes loudness, which is on a logarithmic scale, like the decibel.<br> 
 5.  Take the Discrete Cosine Transform of the 26 power banks. This is required to make certain that the signal is real valued. 
 
 
@@ -37,7 +37,7 @@ K-Nearest Neighbors for Classification:
         	In order to classify the phonemes in our samples, we used K-Nearest Neighbors (KNN) classification. This classification algorithm inputs an unlabeled data vector and a set of labeled vectors. The Euclidean distance from each labeled vector to the unlabeled vector (i.e., the norm of the difference vector between the two) is calculated, and for some number K, the K labeled vectors with the smallest distance are taken. A “majority vote” is taken, where the most common label in this set of K labels is assigned to the unlabeled vector. In the case of a tie, the label of the closest vector among the tied vectors is used.  
         	
  
- <h3>METHODS AND PROCEDURE:</h3>
+ <h4>METHODS AND PROCEDURE:</h4>
 
 Our project required an effective way to quantify a given speech signal’s phonemes. The problem we encountered was that spoken speech can be imprecise, unpredictable, and variable and these disfluencies carry into the time domain. Rather than investigating the signal in the time domain, we chose use to use MFCCs as our feature vector. While a few linguistic papers do investigate phoneme classification in the time domain, we found academic literature to heavily favor analysis through MFCCs and thereby chose this route.
 
@@ -61,8 +61,8 @@ In this confusion matrix for the phoneme classifier, we can see that the vast ma
 
 
 To correct misclassifications in our program, we implemented a noncausal moving average across the vector of classified phonemes. We considered a window size of 10 for this algorithm, and if we saw that more than 60% of the phonemes in this window were of a certain class, then the phoneme in the middle of that window would be changed to that class. We found that five passes of this algorithm was best in order to get large contiguous regions of a singular phoneme.  
-In the diagram below, the top row is a sequence of phonemes before the moving average is applied, and the bottom row is the resultant sequence. The extraneous vowels in the string of ‘l’s are removed after the application of the filter.
-'uh'	'l'	'l'	'uh'	'l'	'l'	'oy'	'l'	'l'	'l'	'l'	'l'	'l'	
+In the diagram below, the top row is a sequence of phonemes before the moving average is applied, and the bottom row is the resultant sequence. The extraneous vowels in the string of ‘l’s are removed after the application of the filter.<br>
+'uh'	'l'	'l'	'uh'	'l'	'l'	'oy'	'l'	'l'	'l'	'l'	'l'	'l'	<br>
 'uh'	'l'	'l'	'l'	'l'	'l'	'l'	'l'	'l'	'l'	'l'	'l'	'l'	
 
 
@@ -84,7 +84,7 @@ In the place of the original, unaccented vowel, we now have a vowel that is most
 
 
 
- <h3>RESULTS AND FUTURE IMPROVEMENTS:</h3>
+ <h4>RESULTS AND FUTURE IMPROVEMENTS:</h4>
 
 
 
@@ -95,11 +95,17 @@ There are numerous improvements we can make, with the most notable one in combin
 Also, using human neural networks instead of KNN could have given us much better results as well. Yet, we felt as if the deep learning mathematics of Neural Networks were far too complex for us to understand, and felt at odds in using a toolbox that quickly computed this for us.  
 
  
-Voice synthesis could also be improved upon. Once the accented version of the phoneme is identified, it is naively pasted into the discrete time spoken signal at the point where energy is highest. More complex methodologies of voice synthesis, such as Google’s WaveNet could be implemented for smoother sounding audio[7].   
+Voice synthesis could also be improved upon. Once the accented version of the phoneme is identified, it is naively pasted into the discrete time spoken signal at the point where energy is highest. More complex methodologies of voice synthesis, such as Google’s WaveNet could be implemented for smoother sounding audio [7].   
  
 
- <h3>Works Cited:</h3>
-
+ <h4>Works Cited:</h4>
+http://www.sersc.org/journals/IJSIP/vol5_no1/10.pdf
+ http://www.dyslexia-reading-well.com/support-files/the-44-phonemes-of-english.pdf
+ http://www.psb.ugent.be/cbd/papers/gentxwarper/DTWalgorithm.htm
+ https://www.mathworks.com/matlabcentral/fileexchange/43156-dynamic-time-warping--dtw-
+ https://www.mathworks.com/matlabcentral/fileexchange/32849-htk-mfcc-matlab/content/mfcc/mfcc.m
+ https://arxiv.org/abs/1003.4083
+ https://arxiv.org/pdf/1609.03499.pdf
 
 [1]: http://www.sersc.org/journals/IJSIP/vol5_no1/10.pdf
 [2]: http://www.dyslexia-reading-well.com/support-files/the-44-phonemes-of-english.pdf
