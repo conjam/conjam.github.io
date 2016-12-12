@@ -95,17 +95,19 @@ There are numerous improvements we can make, with the most notable one in combin
 Also, using human neural networks instead of KNN could have given us much better results as well. Yet, we felt as if the deep learning mathematics of Neural Networks were far too complex for us to understand, and felt at odds in using a toolbox that quickly computed this for us.  
 
  
-Voice synthesis could also be improved upon. Once the accented version of the phoneme is identified, it is naively pasted into the discrete time spoken signal at the point where energy is highest. More complex methodologies of voice synthesis, such as Google’s WaveNet could be implemented for smoother sounding audio [7].   
+Voice synthesis could also be improved upon. Once the accented version of the phoneme is identified, it is naively pasted into the discrete time spoken signal at the point where energy is highest. More complex methodologies of voice synthesis, such as Google’s WaveNet could be implemented for smoother sounding audio [7].   <br>
  
-
  <h4>Works Cited:</h4><br><br>
-http://www.sersc.org/journals/IJSIP/vol5_no1/10.pdf
- http://www.dyslexia-reading-well.com/support-files/the-44-phonemes-of-english.pdf
- http://www.psb.ugent.be/cbd/papers/gentxwarper/DTWalgorithm.htm
- https://www.mathworks.com/matlabcentral/fileexchange/43156-dynamic-time-warping--dtw-
- https://www.mathworks.com/matlabcentral/fileexchange/32849-htk-mfcc-matlab/content/mfcc/mfcc.m
- https://arxiv.org/abs/1003.4083
- https://arxiv.org/pdf/1609.03499.pdf
+http://www.sersc.org/journals/IJSIP/vol5_no1/10.pdf<br>
+ http://www.dyslexia-reading-well.com/support-files/the-44-phonemes-of-english.pdf<br>
+ http://www.psb.ugent.be/cbd/papers/gentxwarper/DTWalgorithm.htm<br>
+ https://www.mathworks.com/matlabcentral/fileexchange/43156-dynamic-time-warping--dtw-<br>
+ https://www.mathworks.com/matlabcentral/fileexchange/32849-htk-mfcc-matlab/content/mfcc/mfcc.m<br>
+ https://arxiv.org/abs/1003.4083<br>
+ https://arxiv.org/pdf/1609.03499.pdf<br>
+ <br>
+ <br>
+Easter Egg? Go to home page and type 'eecsbit'
 
 [1]: http://www.sersc.org/journals/IJSIP/vol5_no1/10.pdf
 [2]: http://www.dyslexia-reading-well.com/support-files/the-44-phonemes-of-english.pdf
