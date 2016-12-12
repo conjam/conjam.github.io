@@ -13,7 +13,7 @@ excerpt: "This is our final report."
 ---
 
 
-<h4>TOOLS USED:</h4>
+<h4>TOOLS USED:</h4><br>
 MFCC:
         	Mel Frequency Cepstrum Coefficients (MFCCs) are a common way of representing spoken word signals such in DSP. The inspiration for this feature vector is taken from how the human ear processes sound. The MFCC vector of a signal segment is generated as follows:<br>
 1. Take the Fourier Transform of a windowed signal.  <br>
@@ -37,7 +37,7 @@ K-Nearest Neighbors for Classification:
         	In order to classify the phonemes in our samples, we used K-Nearest Neighbors (KNN) classification. This classification algorithm inputs an unlabeled data vector and a set of labeled vectors. The Euclidean distance from each labeled vector to the unlabeled vector (i.e., the norm of the difference vector between the two) is calculated, and for some number K, the K labeled vectors with the smallest distance are taken. A “majority vote” is taken, where the most common label in this set of K labels is assigned to the unlabeled vector. In the case of a tie, the label of the closest vector among the tied vectors is used.  
         	
  
- <h4>METHODS AND PROCEDURE:</h4>
+ <h4>METHODS AND PROCEDURE:</h4><br>
 
 Our project required an effective way to quantify a given speech signal’s phonemes. The problem we encountered was that spoken speech can be imprecise, unpredictable, and variable and these disfluencies carry into the time domain. Rather than investigating the signal in the time domain, we chose use to use MFCCs as our feature vector. While a few linguistic papers do investigate phoneme classification in the time domain, we found academic literature to heavily favor analysis through MFCCs and thereby chose this route.
 
@@ -84,7 +84,7 @@ In the place of the original, unaccented vowel, we now have a vowel that is most
 
 
 
- <h4>RESULTS AND FUTURE IMPROVEMENTS:</h4>
+ <h4>RESULTS AND FUTURE IMPROVEMENTS:</h4><br>
 
 
 
@@ -98,7 +98,7 @@ Also, using human neural networks instead of KNN could have given us much better
 Voice synthesis could also be improved upon. Once the accented version of the phoneme is identified, it is naively pasted into the discrete time spoken signal at the point where energy is highest. More complex methodologies of voice synthesis, such as Google’s WaveNet could be implemented for smoother sounding audio [7].   
  
 
- <h4>Works Cited:</h4>
+ <h4>Works Cited:</h4><br>
 http://www.sersc.org/journals/IJSIP/vol5_no1/10.pdf
  http://www.dyslexia-reading-well.com/support-files/the-44-phonemes-of-english.pdf
  http://www.psb.ugent.be/cbd/papers/gentxwarper/DTWalgorithm.htm
