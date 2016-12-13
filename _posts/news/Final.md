@@ -12,7 +12,13 @@ images:
 excerpt: "This is our final report."
 ---
 
+Here is our code: 
+https://drive.google.com/file/d/0B1kZnS85NG_MYXZmd0cyWGFpRWs/view
+<br>
 
+Here is our powerpoint:
+https://www.dropbox.com/s/wu05z0cfqa5819b/Accent%20Transformation.pptx?dl=0
+<br>
 <h4>TOOLS USED:</h4><br><br>
 MFCC:
         	Mel Frequency Cepstrum Coefficients (MFCCs) are a common way of representing spoken word signals such in DSP. The inspiration for this feature vector is taken from how the human ear processes sound. The MFCC vector of a signal segment is generated as follows:<br>
@@ -105,6 +111,7 @@ http://www.sersc.org/journals/IJSIP/vol5_no1/10.pdf<br>
  https://www.mathworks.com/matlabcentral/fileexchange/32849-htk-mfcc-matlab/content/mfcc/mfcc.m<br>
  https://arxiv.org/abs/1003.4083<br>
  https://arxiv.org/pdf/1609.03499.pdf<br>
+ http://accent.gmu.edu/<br>
  <br>
  <br>
 Easter Egg? Go to home page and type 'eecsbit'
