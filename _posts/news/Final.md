@@ -11,13 +11,13 @@ images:
    - images/confusion.png   
 excerpt: "This is our final report."
 ---
+ 
+Here is our [code](https://drive.google.com/file/d/0B1kZnS85NG_MNW5yOVAwcjBJVFU/view) .
 
-Here is our code: 
-https://drive.google.com/file/d/0B1kZnS85NG_MNW5yOVAwcjBJVFU/view
+
 <br>
+Here is our [powerpoint](https://www.dropbox.com/s/wu05z0cfqa5819b/Accent%20Transformation.pptx?dl=0) .
 
-Here is our powerpoint:
-https://www.dropbox.com/s/wu05z0cfqa5819b/Accent%20Transformation.pptx?dl=0
 <br>
 <h4>TOOLS USED:</h4><br><br>
 MFCC:
@@ -61,7 +61,7 @@ Considering the 13 dimensional space of MFCCs, our KNN classifier gave us an err
 
 <br><br>
 
-<img src="/images/timedomain.png" style="width:400px">
+<img src="/images/confusion.png" style="width:400px">
 
 In this confusion matrix for the phoneme classifier, we can see that the vast majority of predictions coincide with the ground truth classification. This is the yellow line along the diagonal. There are a handful of elements which contribute most of the errors. 
 
