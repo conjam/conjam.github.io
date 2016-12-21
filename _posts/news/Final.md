@@ -8,16 +8,17 @@ categories :
 author: Vikram Sachdeva
 images:
    - images/dtwr.png
-   - images/confusion.png   
+   - images/confusion.png  
+   - images/vcc.png     
 excerpt: "This is our final report."
 ---
  
-Here is our [code](https://drive.google.com/file/d/0B1kZnS85NG_MNW5yOVAwcjBJVFU/view) .
-
-
+Here is our [code.](https://drive.google.com/file/d/0B1kZnS85NG_MNW5yOVAwcjBJVFU/view)
 <br>
-Here is our [powerpoint](https://www.dropbox.com/s/wu05z0cfqa5819b/Accent%20Transformation.pptx?dl=0) .
-
+Here is our [powerpoint.](https://www.dropbox.com/s/wu05z0cfqa5819b/Accent%20Transformation.pptx?dl=0)
+<br>
+Here are examples of our [transformations.](
+https://www.dropbox.com/sh/o09arj9w54n3ai1/AAC_JRLNp6xWMIItpEBe0mqUa?dl=0)
 <br>
 <h4>TOOLS USED:</h4><br><br>
 MFCC:
@@ -101,8 +102,23 @@ There are numerous improvements we can make, with the most notable one in combin
 Also, using human neural networks instead of KNN could have given us much better results as well. Yet, we felt as if the deep learning mathematics of Neural Networks were far too complex for us to understand, and felt at odds in using a toolbox that quickly computed this for us.  
 
  
-Voice synthesis could also be improved upon. Once the accented version of the phoneme is identified, it is naively pasted into the discrete time spoken signal at the point where energy is highest. More complex methodologies of voice synthesis, such as Google’s WaveNet could be implemented for smoother sounding audio [7].   <br>
- 
+Voice synthesis could also be improved upon. Once the accented version of the phoneme is identified, it is naively pasted into the discrete time spoken signal at the point where energy is highest. More complex methodologies of voice synthesis, such as Google’s WaveNet could be implemented for smoother sounding audio [7].   
+<br>
+ <h4>ADDENDUM:</h4><br>
+ In our Transformation Folder, ‘english13.mp3’, ‘english19.mp3’,‘english71.mp3’ were the respective British, Southern, and Midwestern accents we wanted to emulate. Two other files, ‘english117.mp3’ and  ‘english145.mp3’ were additional files we included that were respectively, a feminine-sounding voice and another British accent. All of these files were from the Speech Accent archive. [8] 
+As illustrated through our transformed audio ‘..._Transform.wav’ and discussed above, we have many short substitutions that do not create a discernible impact to transform the speech.  However, notable achievements that resulted in a slight speech transformation occurred at time points throughout our files: ‘english19_Transform’: 0:13 (‘five thick slabs’) 0:26 (‘for the kids’), ‘english117_Transform’: 0:02(‘ask her’) , 0:18(‘a snack’), 
+‘english145_Transform’: 0:02(‘ask her’), 0:09 (‘six spoons’).
+Our file, ‘english117_Transform’, was especially illuminating because of the high prevalence of resubstitution errors. This could be a result of a variety of errors, but we suspect that our training data was not adapted to the variance of pitch this sound file presents. In turn, our classifier results in a great deal of errors, but we could have rectified this situation by including a variety of training data with variable pitch scales.  
+<br><br>
+<img src="/images/confusion.png" style="width:400px">
+
+The confusion matrix for our KNN classifier discussed previously was not appearing due to formatting issues. We have addressed this and it is presented above. The confusion matrix for the vowel/consonant classifier is pictured below. We do not have confusion matrices for the classifier that we do not use because we do not have working code that implements them, since we decided on a KNN Classifier relatively early on in the project. 
+
+<br><br>
+<img src="/images/vcc.png" style="width:400px">
+
+
+
  <h4>Works Cited:</h4><br><br>
 http://www.sersc.org/journals/IJSIP/vol5_no1/10.pdf<br>
  http://www.dyslexia-reading-well.com/support-files/the-44-phonemes-of-english.pdf<br>
@@ -123,7 +139,7 @@ Easter Egg? Go to home page and type 'eecsbit'
 [5]: https://www.mathworks.com/matlabcentral/fileexchange/32849-htk-mfcc-matlab/content/mfcc/mfcc.m
 [6]: https://arxiv.org/abs/1003.4083
 [7]: https://arxiv.org/pdf/1609.03499.pdf
-
+[8]: http://accent.gmu.edu/browse.php
 
 .  
  
