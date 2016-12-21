@@ -104,11 +104,11 @@ Also, using human neural networks instead of KNN could have given us much better
  
 Voice synthesis could also be improved upon. Once the accented version of the phoneme is identified, it is naively pasted into the discrete time spoken signal at the point where energy is highest. More complex methodologies of voice synthesis, such as Google’s WaveNet could be implemented for smoother sounding audio [7].   
 <br>
- <h4>ADDENDUM:</h4><br>
+ <h4>ADDENDUM:</h4><br><br>
  In our Transformation Folder, ‘english13.mp3’, ‘english19.mp3’,‘english71.mp3’ were the respective British, Southern, and Midwestern accents we wanted to emulate. Two other files, ‘english117.mp3’ and  ‘english145.mp3’ were additional files we included that were respectively, a feminine-sounding voice and another British accent. All of these files were from the Speech Accent archive. [8] 
-As illustrated through our transformed audio ‘..._Transform.wav’ and discussed above, we have many short substitutions that do not create a discernible impact to transform the speech.  However, notable achievements that resulted in a slight speech transformation occurred at time points throughout our files: ‘english19_Transform’: 0:13 (‘five thick slabs’) 0:26 (‘for the kids’), ‘english117_Transform’: 0:02(‘ask her’) , 0:18(‘a snack’), 
-‘english145_Transform’: 0:02(‘ask her’), 0:09 (‘six spoons’).
-Our file, ‘english117_Transform’, was especially illuminating because of the high prevalence of resubstitution errors. This could be a result of a variety of errors, but we suspect that our training data was not adapted to the variance of pitch this sound file presents. In turn, our classifier results in a great deal of errors, but we could have rectified this situation by including a variety of training data with variable pitch scales.  
+As illustrated through our transformed audio ‘..._Transform.wav’ and discussed above, we have many short substitutions that do not create a discernible impact to transform the speech.  However, notable achievements that resulted in a slight speech transformation occurred at time points throughout our files: ‘english19_Transform.wav’: 0:13 (‘five thick slabs’) 0:26 (‘for the kids’),<br> ‘english117_Transform.wav’: 0:02(‘ask her’) , 0:18(‘a snack’), <br>
+‘english145_Transform.wav’: 0:02(‘ask her’), 0:09 (‘six spoons’).<br>
+Our file, ‘english117_Transform.wav’, was especially illuminating because of the high prevalence of resubstitution errors. This could be a result of a variety of errors, but we suspect that our training data was not adapted to the variance of pitch this sound file presents. In turn, our classifier results in a great deal of errors, but we could have rectified this situation by including a variety of training data with variable pitch scales.  
 <br><br>
 <img src="/images/confusion.png" style="width:400px">
 
@@ -130,7 +130,7 @@ http://www.sersc.org/journals/IJSIP/vol5_no1/10.pdf<br>
  http://accent.gmu.edu/<br>
  <br>
  <br>
-Easter Egg? Go to home page and type 'eecsbit'
+Easter Egg? Go to home page and type 'eecsbit' Audio on and you'll hear a mix! 
 
 [1]: http://www.sersc.org/journals/IJSIP/vol5_no1/10.pdf
 [2]: http://www.dyslexia-reading-well.com/support-files/the-44-phonemes-of-english.pdf
